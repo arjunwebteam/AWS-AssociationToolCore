@@ -1,0 +1,222 @@
+@model List<AWS_AssociationToolCore.Entities.CustomFieldConditions>
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+    AWS_AssociationToolCore.Entities.FormMaster form = ViewBag.Form;
+    List<AWS_AssociationToolCore.Entities.CustomFields> fieldsInForm = ViewBag.FieldsInForm;
+    string[] operators = ViewBag.Operators;
+    string[] actions = ViewBag.Actions;
+    ViewBag.Title = "Manage Conditions - " + (form != null ? form.FormName : "");
+}
+
+<script>
+    var formId = @(form != null ? form.FormId : 0);
+
+    function ToggleValueInputs() {
+        var op = $('#ddlOperator').val();
+        var noValue = (op === 'IsEmpty' || op === 'IsNotEmpty');
+        $('#txtComparisonValue').prop('disabled', noValue).toggle(!noValue);
+
+        var action = $('#ddlAction').val();
+        $('#txtUpdatedValue').closest('.col-md-3').toggle(action === 'UpdateValue');
+    }
+
+    function SaveCondition() {
+        var data = {
+            ConditionId: 0,
+            FormId: formId,
+            SourceFieldId: $('#ddlSourceField').val(),
+            Operator: $('#ddlOperator').val(),
+            ComparisonValue: $('#txtComparisonValue').val(),
+            TargetFieldId: $('#ddlTargetField').val(),
+            ActionType: $('#ddlAction').val(),
+            UpdatedValue: $('#txtUpdatedValue').val(),
+            IsActive: true
+        };
+        $.post('@Url.Action("SaveCondition")', data, function (result) {
+            if (result.ok) location.reload();
+            else alert(result.message);
+        });
+    }
+
+    function DeleteCondition(id) {
+        if (!confirm('Delete this condition?')) return;
+        $.post('@Url.Action("DeleteCondition")', { conditionId: id, formId: formId }, function (result) {
+            if (result.ok) location.reload();
+            else alert(result.message);
+        });
+    }
+
+    $(function () {
+        ToggleValueInputs();
+        $('#ddlOperator, #ddlAction').on('change', ToggleValueInputs);
+    });
+
+
+
+        function SaveCondition() {
+        var data = {
+            ConditionId: 0,
+            FormId: formId,
+            SourceFieldId: $('#ddlSourceField').val(),
+            Operator: $('#ddlOperator').val(),
+            ComparisonValue: $('#txtComparisonValue').val(),
+            TargetFieldId: $('#ddlTargetField').val(),
+            ActionType: $('#ddlAction').val(),
+            UpdatedValue: $('#txtUpdatedValue').val(),
+            IsActive: true
+        };
+        $.post('@Url.Action("SaveCondition")', data, function (result) {
+            showLobiboxNotification(result.messageType, result.message);
+            if (result.ok) {
+                RenderConditionsTable(result.conditions);
+            }
+        }).fail(function () {
+            showLobiboxNotification('error', 'Something went wrong while saving the condition.');
+        });
+    }
+
+    function DeleteCondition(id) {
+        if (!confirm('Delete this condition?')) return;
+        $.post('@Url.Action("DeleteCondition")', { conditionId: id, formId: formId }, function (result) {
+            showLobiboxNotification(result.messageType, result.message);
+            if (result.ok) {
+                RenderConditionsTable(result.conditions);
+            }
+        }).fail(function () {
+            showLobiboxNotification('error', 'Something went wrong while deleting the condition.');
+        });
+    }
+
+    function RenderConditionsTable(conditions) {
+        var $tbody = $('table.table tbody');
+        if (!conditions || conditions.length === 0) {
+            $tbody.html('<tr><td colspan="6" class="text-center">No conditions configured.</td></tr>');
+            return;
+        }
+
+        var rows = '';
+        $.each(conditions, function (i, c) {
+            rows += '<tr>'
+                + '<td>' + (c.sourceFieldLabel || c.SourceFieldLabel || '') + '</td>'
+                + '<td>' + (c.operator || c.Operator || '') + '</td>'
+                + '<td>' + (c.comparisonValue || c.ComparisonValue || '') + '</td>'
+                + '<td>' + (c.targetFieldLabel || c.TargetFieldLabel || '') + '</td>'
+                + '<td>' + (c.actionType || c.ActionType || '') + '</td>'
+                + '<td style="text-align:center">'
+                + '<a class="text-danger cursor-pointer" onclick="DeleteCondition(' + (c.conditionId || c.ConditionId) + ')"><i class="bi bi-trash-fill"></i></a>'
+                + '</td>'
+                + '</tr>';
+        });
+        $tbody.html(rows);
+    }
+
+
+
+
+
+
+
+</script>
+
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Conditional Logic — @(form != null ? form.FormName : "")</h5>
+       @*  <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", new { formId = formId })">Back</a> *@
+    </div>
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Source Field</label>
+                <select id="ddlSourceField" class="form-select">
+                    @foreach (var f in fieldsInForm)
+                    {
+                        <option value="@f.CustomFieldId">@f.FieldLabel</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Operator</label>
+                <select id="ddlOperator" class="form-select">
+                    @foreach (var op in operators)
+                    {
+                        <option value="@op">@op</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Comparison Value</label>
+                <input id="txtComparisonValue" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Target Field</label>
+                <select id="ddlTargetField" class="form-select">
+                    @foreach (var f in fieldsInForm)
+                    {
+                        <option value="@f.CustomFieldId">@f.FieldLabel</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Action</label>
+                <select id="ddlAction" class="form-select">
+                    @foreach (var act in actions)
+                    {
+                        <option value="@act">@act</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 mt-2" style="display:none">
+                <label class="form-label">Updated Value</label>
+                <input id="txtUpdatedValue" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" onclick="SaveCondition()"><i class="bi bi-plus-lg"></i> Add Condition</button>
+            </div>
+        </div>
+        <small class="text-muted d-block mt-2">
+            Example: Source = "Level", Operator = Equals, Comparison Value = "Level 1", Target = "Sub Level", Action = Show.
+        </small>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h6 class="mb-0">Existing Conditions</h6></div>
+    <div class="card-body">
+        <table class="table table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Source Field</th>
+                    <th>Operator</th>
+                    <th>Comparison Value</th>
+                    <th>Target Field</th>
+                    <th>Action</th>
+                   
+                    <th style="text-align:center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Count > 0)
+                {
+                    foreach (var c in Model)
+                    {
+                        <tr>
+                            <td>@c.SourceFieldLabel</td>
+                            <td>@c.Operator</td>
+                            <td>@c.ComparisonValue</td>
+                            <td>@c.TargetFieldLabel</td>
+                            <td>@c.ActionType</td>
+                            
+                            <td style="text-align:center">
+                                <a class="text-danger cursor-pointer" onclick="DeleteCondition(@c.ConditionId)"><i class="bi bi-trash-fill"></i></a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="7" class="text-center">No conditions configured.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

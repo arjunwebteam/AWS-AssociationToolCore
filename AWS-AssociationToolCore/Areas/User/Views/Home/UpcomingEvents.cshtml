@@ -1,0 +1,93 @@
+﻿@using Microsoft.AspNetCore.Http
+    @using AWS_AssociationToolCore.BLL
+
+@{
+    var lstUpcommingEvents = (List<AWS_AssociationToolCore.Entities.Events>)ViewBag.lstUpcommingEvents;
+
+    int status = 0;
+    
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+
+
+    var imglocEvent1 = objAppInfo.BaseUrl + "Content/events/banners/thumb/";
+    var imglocNormal = objAppInfo.BaseUrl + "Content/events/banners/";
+
+    Int64 ChapterId = ViewBag.ChapterId;
+    long chapterId = ViewBag.ChapterId != null ? Convert.ToInt64(ViewBag.ChapterId) : 0;
+    string chapterName = ViewBag.cname?.ToString();
+
+    var Type = ViewBag.Type;
+    //var imglocNormal = "~/Content/WebsiteBanners/NormalImages/";
+
+}
+@if (lstUpcommingEvents != null && lstUpcommingEvents.Count != 0)
+{
+    <div class="up-bg mt-3">
+
+        <h2 class="sec-title text-center">Current/Upcoming Events</h2>
+
+        <div class="upcoming-block">
+            @foreach (var item in lstUpcommingEvents)
+                {
+                <div class="upcoming-box text-center">
+
+
+
+                    @if (item.BannerUrl != null && item.BannerUrl != "")
+                    {
+                        <a href="@Url.Action("EventDetails", "Event", new { cname = Context.Session.GetString("ChapterName"), EventName = AWS_AssociationToolCore.BLL.Common.EncodeURL(@item.EventName), Type = "upcoming", eid = item.EventId })" class="a-overlay"></a>
+                        <div class="upcoming__icon position-relative">
+                            <img width="100px" title="@item.EventName" alt="@item.EventName" src="@AWS_AssociationToolCore.BLL.Common.ValidateImage((imglocNormal + item.BannerUrl), imglocNormal + "no-imagefinal.jpg")" class="d-block w-100" />
+
+                            @*<img class="w-100" src="@(imglocEvent + item.BannerUrl)" alt="@item.EventName" title="@item.EventName">*@
+                        </div>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("EventDetails", "Event", new { cname = Context.Session.GetString("ChapterName"), EventName = AWS_AssociationToolCore.BLL.Common.EncodeURL(@item.EventName), Type = "upcoming", eid = item.EventId })" class="a-overlay"></a>
+                        <div class="upcoming__icon position-relative">
+                           
+                            <img width="100px" title="@item.EventName" alt="@item.EventName" src="@AWS_AssociationToolCore.BLL.Common.ValidateImage((imglocNormal + item.BannerUrl), imglocNormal + "no-imagefinal.jpg")" class="d-block w-100"> />
+                        </div>
+
+                    }
+
+
+
+
+                    <div class="upcoming__content text-center">
+                        <h5 class="mb-0">
+                            <a href="@Url.Action("EventDetails", "Event", new { cname = Context.Session.GetString("ChapterName"), EventName = AWS_AssociationToolCore.BLL.Common.EncodeURL(@item.EventName), Type = "upcoming", eid = item.EventId })" style="color: #3c3738;">
+                                @if (item.EventName.Length >= 40)
+                                {@Html.Raw(item.EventName.Substring(0, 40)) @("...")}
+                                else
+                                {@Html.Raw(item.EventName)}
+                            </a>
+                        </h5>
+                        <p class="mb-0">
+                            <img src="Content/User/images/calender.png">
+                            @if (item.StartDate != DateTime.MinValue && item.EndDate != DateTime.MinValue && (item.EndDate.Date - item.StartDate.Date).Days > 0)
+                            {
+                                @Html.Raw(@item.StartDate.ToAppDateWithDay() + " , " + @item.StartDate.ToAppDateWithDay())
+
+                            }
+                            else if (item.StartDate != DateTime.MinValue && item.EndDate != DateTime.MinValue)
+                            {
+                                @Html.Raw(@item.StartDate.ToAppDateWithDay()+ " , " + item.StartDate.ToAppDateWithDay())
+                                if (item.StartDate.ToString("hh.mm tt") != "12.00 AM")
+                                {
+                                    @Html.Raw(" " + @item.StartDate.ToString("hh.mm tt") + " - ")
+                                    @Html.Raw(@item.EndDate.ToString("hh.mm tt"))
+                                }
+                            }
+                        </p>
+                    </div>
+                </div>
+            }
+
+        </div>
+        
+    </div>
+}

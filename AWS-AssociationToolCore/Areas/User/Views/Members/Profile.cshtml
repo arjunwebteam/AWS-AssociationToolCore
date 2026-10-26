@@ -1,0 +1,1481 @@
+﻿@{
+    Layout = "~/Areas/User/Views/Shared/_MainLayout.cshtml";
+
+
+    int _qstatus = 0;
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref _qstatus);
+
+    AWS_AssociationToolCore.Entities.Members objMember = ViewBag.objMembers;
+    var objMembersType = (AWS_AssociationToolCore.Entities.Members)ViewBag.objMembersType;
+    AWS_AssociationToolCore.Entities.Volunteers objVolunteers = ViewBag.objVolunteers;
+    var lstMembershipType = (List<AWS_AssociationToolCore.Entities.MembershipTypes>)objMembersType.lstMembershipType;
+
+
+    var objMemberDetails = (AWS_AssociationToolCore.Entities.Members)ViewBag.objMemberDetails;
+    //var MembershipType = ViewBag.MembershipType;
+    string reneve = "";
+    if (objMemberDetails.ExpiryDate != DateTime.MinValue && ViewBag.daysRemaining <= 1 && ViewBag.daysRemaining <= 60)
+    {
+        reneve = "yes";
+    }
+
+    string pay = "";
+    if (objMemberDetails.objMembershipOrder.PaymentStatus != "Completed")
+    {
+        pay = "yes";
+    }
+
+    var lstVolunteers = (List<AWS_AssociationToolCore.Entities.Volunteers>)ViewBag.lstVolunteers;
+
+
+    decimal amt = 0;
+
+    string ChapterName = "";
+    //cname = ViewBag.cname;
+    string cname = ViewBag.cname;
+
+    List<AWS_AssociationToolCore.Entities.ChildrenInfo> lstChildrenInfo = new List<AWS_AssociationToolCore.Entities.ChildrenInfo>();
+    lstChildrenInfo = objMember.lstChildrenInfo;
+
+    AWS_AssociationToolCore.BLL.Members _Members = new AWS_AssociationToolCore.BLL.Members();
+
+    string password = _Members.GetPassword(objMember.MemberId, ref _qstatus);
+
+
+    string rs = ViewBag.rs;
+
+    var imgloc = objAppInfo.UploadPath + "SponsorRegistrations/ThumbImages/";
+    var imglocNormal = objAppInfo.UploadPath + "SponsorRegistrations/NormalImages/";
+    var location = objAppInfo.BaseUrl + "Content/MemberProfileImages/";
+    ViewBag.Title = "My Profile | " + objAppInfo.SiteName + " Member Portal";
+    ViewBag.MetaDescription = "Manage your " + objAppInfo.SiteName + " profile, update details, and track your membership activities.";
+    ViewBag.MetaKeywords = objAppInfo.SiteName + " profile, member profile, update account, Telugu community account settings";
+
+    ViewBag.PageHeading = "My Profile";
+
+}
+<script src="Scripts/Admin/Common.js" type="text/javascript"></script>
+
+<script>
+    function togglePassword(inputId, iconElement) {
+        var inputField = document.getElementById(inputId);
+        if (inputField.type === "password") {
+            inputField.type = "text"; // Show password
+            iconElement.classList.remove("bi-eye-slash"); // Change icon to "eye"
+            iconElement.classList.add("bi-eye");
+        } else {
+            inputField.type = "password"; // Hide password
+            iconElement.classList.remove("bi-eye"); // Change icon back to "eye-slash"
+            iconElement.classList.add("bi-eye-slash");
+        }
+    }
+
+
+    $(document).ready(function () {
+        if ('@rs' == 'reset') {
+            $('#changePassword').modal('show');
+        }
+        $('#ProfileDisplay').show();
+        $('.closable').append('<span id="lblclose" class="closelink" title="Close"></span>');
+        $('.closelink').click(function () {
+                $(this).parent().fadeOut('600', function () { $(this).remove(); });
+            });
+
+        $('#LiProfile').addClass('active');
+
+
+
+        if('@reneve' == 'yes' && '@pay' != 'yes')
+        {
+            $('#renewalConfirm-popup').modal('show');
+        }
+        else{
+            $('#renewalConfirm-popup').modal('hide');
+        }
+        if('@pay' == 'yes')
+        {
+            $('#PaymentPopup').modal('show');
+        }
+        else {
+            $('#PaymentPopup').modal('hide');
+        }
+
+         if ('@objMember.Fax' == 'Yes') {
+            ChangePasswordshow();
+        }
+    });
+    function emailclose() {
+        $('#Email').val('');
+        $('#spanEmail').html('');
+
+        $('#changeemail').dialog('close');
+    }
+    function emailchange() {
+        $('#PEmail').removeClass("validate");
+        $('#PEmail').val('@objMember.Email');
+        $('#changeemail').dialog('open');
+    }
+
+    function Validate() {
+        var returnval = true;
+
+
+        if ($('#MobilePhone').val() != "") {
+            var ph = $('#MobilePhone').val();
+            if (ph.length < 12) {
+                alert('Please enter valid modile number (xxx-xxx-xxxx)');
+                $('#MobilePhone').focus().addClass("validate"); returnval = false;
+            }
+            else { $('#MobilePhone').removeClass("validate"); }
+        }
+
+        return returnval;
+    }
+
+    function Mobilephonenochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#MobilePhone').val();
+            if (ph.length == 3) { $('#MobilePhone').val(ph + '-'); }
+            if (ph.length == 7) { $('#MobilePhone').val(ph + '-'); }
+        }
+    }
+
+    function SpouseMobilephonenochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#SpouseCell').val();
+            if (ph.length == 3) { $('#SpouseCell').val(ph + '-'); }
+            if (ph.length == 7) { $('#SpouseCell').val(ph + '-'); }
+        }
+    }
+
+    function ResetEmailValidateClass() {
+        $('#PEmail').removeClass("validate");
+
+    }
+    function CheckEmailAvailability(email) {
+        var returnval = null;
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("CheckProfileEmailAvailability", "Members")', // the URL of the controller action method
+            data: { MemberId: @(objMember.MemberId), Email: email }, // optional data
+            datatype: "JSON",
+            async: false,
+            success: function (result) {
+            if (result.ok) {
+            returnval = result.data;
+            }
+            }
+            });
+            return returnval;
+            }
+
+            function Photochange()
+            {
+            $('#file').val('');
+            $('#spanfile').html('');
+            $('#changeimage').dialog('open');
+            }
+            function mobileonchange()
+            {
+            var phone = $('#MobilePhone').val();
+            if(phone.length == 3){$('#MobilePhone').val(phone+'-');}
+            else if(phone.length == 7){$('#MobilePhone').val(phone+'-');}
+            }
+            function mobileonchange1()
+            {
+            var phone = $('#SpouseSkils').val();
+            if (phone.length == 3) { $('#SpouseSkils').val(phone+'-');}
+            else if (phone.length == 7) { $('#SpouseSkils').val(phone+'-');}
+            }
+            function ismobileonchange() {
+            var phone = $('#SelfPhoneNo').val();
+            if (phone.length == 3) { $('#SelfPhoneNo').val(phone + '-'); }
+            else if (phone.length == 7) { $('#SelfPhoneNo').val(phone + '-'); }
+            }
+            function ispmobileonchange() {
+            var phone = $('#SpousePhoneNo').val();
+            if (phone.length == 3) { $('#SpousePhoneNo').val(phone + '-'); }
+            else if (phone.length == 7) { $('#SpousePhoneNo').val(phone + '-'); }
+            }
+
+
+            function closeValidation(field) {
+            $(field).parent().hide();
+            }
+
+            function ChangePasswordshow() {
+            $('#spanNewPassword').html('');
+            $('#OldPassword').val('');
+            $('#NewPassword').val('');
+            $('#ConfPassword').val('');
+            $('#OldPassword').removeClass("validate");
+            $('#NewPassword').removeClass("validate");
+            $('#ConfPassword').removeClass("validate");
+            $('#changepassword').dialog('open');
+            }
+            function ValidateImg() {
+            if ($.trim($('#file').val()) == '') { $('#file').focus(); $('#Aspanfile').show().html('Image Required <span>&nbsp;</span><i>&nbsp;</i><abbr onclick="closeValidation(this);">&nbsp;</abbr>'); return false; } else { $('#Aspanfile').hide().html(''); }
+            if (!Common.isImage($('#file').val())) { $('#Aspanfile').show().html('Sorry Image is invalid. Only allowed extensions are:<b>Jpeg, png</b>.<span>&nbsp;</span><i>&nbsp;</i><abbr onclick="closeValidation(this);">&nbsp;</abbr>'); $('#file').focus(); return false; } else { $('#Aspanfile').hide().html(''); }
+            return true;
+            }
+            function formatPhoneNumber(number) {
+            // Remove any non-numeric characters
+            const cleanedNumber = number.replace(/\D/g, "");
+
+            // Ensure the number has 10 digits
+            if (cleanedNumber.length < 10) {
+            return "Entered less than 10 digits.";
+            }
+            if (cleanedNumber.length > 10) {
+            return "Entered more than 10 digits.";
+            }
+
+            // Format the number using string slicing
+            const areaCode = cleanedNumber.slice(0, 3);
+            const firstThree = cleanedNumber.slice(3, 6);
+            const lastFour = cleanedNumber.slice(6);
+
+            return `${areaCode}-${firstThree}-${lastFour}`;
+            }
+
+
+
+            function handlePaste(event) {
+            // Check if the target is the input element
+            if (event.target.id === "MobilePhone") {
+            const pastedNumber = (event.clipboardData || window.clipboardData).getData('text');
+            const formattedNumber = formatPhoneNumber(pastedNumber);
+            event.target.value = formattedNumber; // Replace input value with formatted number
+            event.preventDefault(); // Prevent default pasting behavior
+            }
+            }
+            function handlePastes(event) {
+            // Check if the target is the input element
+            if (event.target.id === "SpouseCell") {
+            const pastedNumber = (event.clipboardData || window.clipboardData).getData('text');
+            const formattedNumber = formatPhoneNumber(pastedNumber);
+            event.target.value = formattedNumber; // Replace input value with formatted number
+            event.preventDefault(); // Prevent default pasting behavior
+            }
+            }
+            function SaveCertificates(VolunteerId) {
+            
+            $.ajax({
+            type: "POST",
+            url: '@Url.Action("GetCertificateandSave", "Volunteer")', // the URL of the controller action method
+            data: { VolunteerId: VolunteerId }, // optional data
+            datatype: "JSON",
+            success: function (result) {
+            if (result.ok) {
+            $('#divmessage').html(result.data);
+            
+            if (result.data1 != '') {
+            window.open(result.data1, '_blank');
+            }
+            }
+            else {
+            $('#divmessage').html(result.data);
+            }
+            }
+            });
+            }
+
+            function VolunteersBind() {
+            $.ajax({
+            url: '@Url.Action("Profile", "Members")',
+            type: 'GET',
+            cache: false,
+            data: {  PageNo: pageno, SortColumn: sortcolumn, SortOrder: sortorder },
+            success: function (result) {
+            $('#volunteer').html(result);
+            PagerClickBind();
+            }
+            });
+            }
+
+            function UpdateHoursSpent(i, VolunteerId) {
+            var HoursSpent = parseInt($('#HoursSpent' + i).val());
+            $.ajax({
+            type: 'POST',
+            url: '@Url.Action("UpdateVolunteerHours", "Volunteer")',
+            data: { HoursSpent: HoursSpent, VolunteerId: VolunteerId },
+            success: function (result) {
+            var div = '';
+            if (result.ok) {
+            $("#divmessage").html(result.data);
+            VolunteersBind(1);
+            }
+            else {
+            $("#divmessage").html(result.data);
+            $('#vfailedmsg').html(result.data).show();
+            }
+            }
+            });
+            }
+
+            function editprofile() {
+            $('#editprofilebtn').hide('slow');
+            $('#editprofilebtn1').hide('slow');
+            $('#editarticle').show('slow');
+            $('#viewarticle').hide('slow');
+            $('#prof1').hide('slow');
+            $('#editdiv').show('slow');
+                $('#Renewal').hide();
+                $('#mail').hide('slow');
+            
+
+            }
+
+
+            function RenewalShow() {
+
+            $('#Renewal').show();
+            $('#ProfileDisplay').show();
+            $('#editdiv').hide('slow');
+            $('#prof1').hide('slow');
+
+            }
+
+            function getamount(membershipid) {
+            var amt = '@amt';
+            var str = "";
+            $.ajax({
+            url: '@Url.Action("GetAmount", "Members")',
+            type: 'POST',
+            data: { MembershipTypeId: membershipid },
+            datatype: "JSON",
+            success: function (result) {
+            if (result.ok) {
+            var objMembershipType = result.data;
+            if (amt != 0) {
+            if (objMembershipType.MembershipType == 'Life Membership' || objMembershipType.MembershipType == 'Life Membership Single') {
+            var acprice = (objMembershipType.Price);
+            var amt2 = amt;
+            amt = parseInt(acprice) - parseInt(amt);
+            str = '<span class="red-t">Note: </span>You already paid (' + Math.round(amt2, 0) + ' $) amount has been deducted from the present amount.'
+            }
+            else {
+            amt = (objMembershipType.Price);
+            }
+            }
+            else {
+            amt = (objMembershipType.Price);
+            }
+            $('#MemberAmount').val(amt);
+            $('#MembershipType').val(objMembershipType.MembershipType);
+            $('#MemberDiscounttxt').html(str).show();
+            $('#AmountPayable').html('$ ' + amt);
+            if(objMembershipType.Price == 0){
+            paypalyhide();
+            }
+            else{
+            paypalbyshow();
+            }
+            
+            }
+            else {
+            alert(result.data);
+            }
+            }
+            });
+            }
+
+            function ViewPassword(id) {
+            var inputType = $('#' +id).attr('type');
+            if (inputType == "text") {
+            $('#'+id).attr('type', 'password');
+            }
+            else {
+            $('#' +id).attr('type', 'text');
+            }
+            }
+</script>
+<script>
+        $(document).ready(function () {
+            LoadLatestNewsList();
+        });
+
+        function LoadLatestNewsList() {
+            $.ajax({
+                type: "GET",
+                url: '@Url.Action("FEEventList", "Members")',
+             data: {
+             
+            MemberId  : '@objMember.MemberId'
+         
+        },
+
+            success: function (data) {
+                    $("#showevents").html(data);
+                },
+                error: function () {
+                    $("#showevents").html('<p class="text-danger">Failed to load events.</p>');
+                }
+            });
+        }
+    </script>
+<script>
+    function toggleVisibility() {
+        var element = document.getElementById("showevents");
+
+        if (element.style.display === "none") {
+            element.style.display = "block";
+            $('#showevents').show();
+            $('#hideprofile').hide();
+        } else {
+            element.style.display = "none";
+            $('#hideprofile').hide();
+            $('#showevents').show();
+        }
+    }
+    function chnage() {
+     
+        $('#changeEmail').modal('show');
+
+    }
+    function profile() {
+        $('#sri').show();
+
+        $('#sriman').hide();
+        $('#mail').hide();
+    }
+    function edit() {
+        $('#sri').hide();
+
+        $('#sriman').show();
+        $('#mail').hide();
+    }
+   
+</script>
+<script>
+    $(document).ready(function () {
+        LoadEventsList();
+    });
+
+    function LoadEventsList() {
+        $.ajax({
+            type: "GET",
+            url: '@Url.Action("ProfileMenu", "Members")',
+            data: {
+                tab    : "Profile",
+                cname    : '@cname'
+             
+            },
+            success: function (data) {
+                $("#divmenus").html(data);
+            },
+            error: function () {
+                $("#divmenus").html('<p class="text-danger">Failed to load events.</p>');
+            }
+        });
+    }
+</script>
+
+<div class="aws-profile-left-sec">
+
+    <!-- profile Here information -->
+    <div class="">
+        <div class="aws-profile-img">
+            <button class="aws-edit-icon" title="edit profile" data-bs-toggle="modal" data-bs-target="#editProfile"><i class="bi bi-pencil"></i></button>
+            @if (objMember.ProfileImage != null && objMember.ProfileImage != "")
+            {
+@*                 <img src="@AWS_AssociationToolCore.BLL.Common.ValidateImage((location + objMember.ProfileImage), location + "com-main.png")" alt="Profile" class="border-radius10 profshd" width="159" height="159" />
+ *@               
+ <img class="border-radius10 profshd" src="@(AWS_AssociationToolCore.BLL.Common.ValidateImage(location + objMember.ProfileImage, location + "no-imagefinal.png"))" alt="@objMember.FirstName" width="159" height="159">
+
+            }
+            else
+            {
+                <img src="Content/user/images/com-main.png" alt="Profile" class="border-radius10 profshd" width="159"
+                     height="159" />
+            }
+        
+        </div>
+         
+    </div>
+    <div id="divmenus">
+
+           </div>
+    <!-- profile Here  -->
+
+</div>
+
+
+
+<div class="aws-profile-right-sec">
+    <div class="aws-title">
+        <span>My Profile</span>
+       
+    </div>
+    <br />
+    <div class="d-flex align-items-center">
+        <div class="aws-title aws-title-2" style="font-size:18px;">
+            <span style="color:red;">Member-Id :</span>
+            @objMember.MemberSkils
+        </div>
+        
+        
+        <div class="text-center" style="font-size: 18px;color: green;font-family: 'Poppins-SemiBold';">
+                    <div id="divmessage" style="width: max-content;">
+                        @if (TempData["message"] != null)
+                        {@Html.Raw(TempData["message"].ToString())}
+
+                        @if (ViewBag.message != null)
+                        {@Html.Raw(ViewBag.message.ToString())}
+                    </div>
+            </div> 
+    </div>
+
+    <div class="aws-bdr"></div>
+    <div class="clearfix" id="hideprofile">
+
+        <div class="">
+            <div class="mt-2 mb-1 aws-title3" style="color: #46aaa8">Hi, @objMember.FirstName</div>
+            <a onclick="chnage();" class="text-dark" style="font-family: 'Poppins-SemiBold'">
+                @(objMember.Email != null && objMember.Email != "" ? objMember.Email : "NA")
+
+                <i class="bi bi-pencil">
+
+
+
+                </i>
+            </a>
+
+            <div class="mt-3">
+                <div class="dot-line"></div>
+            </div>
+        </div>
+       
+        <div class="" id="sri">
+            <div class="d-flex  justify-content-between align-items-center flex-wrap ">
+                <div class="">
+                    <div class=" aws-title3 pb-0">Personal Information</div>
+                </div>
+                <button class="aws-btn3" onclick="edit();" id="hide">Edit Profile</button>
+            </div>
+            <div class="aws-table">
+                <table class="table table-borderless">
+
+                    <tr>
+                        <th width="180">Member-Id</th>
+                        <td> : </td>
+                        <td>@(objMember.MemberSkils != null && objMember.MemberSkils != "" ? objMember.MemberSkils : "NA")</td>
+                    </tr>
+
+
+                    <tr>
+                        <th width="180">Chapter Name</th>
+                        <td> : </td>
+                        <td>@(objMember.ChapterName != null && objMember.ChapterName != "" ? objMember.ChapterName : "NA")</td>
+                    </tr>
+
+                    <tr>
+                        <th width="180">First Name</th>
+                        <td> : </td>
+                        <td>@(objMember.FirstName != null && objMember.FirstName != "" ? objMember.FirstName : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Last Name</th>
+                        <td> : </td>
+                        <td>@(objMember.LastName != null && objMember.LastName != "" ? objMember.LastName : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td> : </td>
+                        <td>@(objMember.Email != null && objMember.Email != "" ? objMember.Email : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Mobile No</th>
+                        <td> : </td>
+                        <td>@(objMember.MobilePhone != null && objMember.MobilePhone != "" ? objMember.MobilePhone : "NA")</td>
+                    </tr>
+
+                    <tr>
+                        <th colspan="3"><div class=" aws-title3 pb-0">Contact Information</div></th>
+
+                    </tr>
+                    <tr>
+                        <th>Address-1</th>
+                        <td> : </td>
+                        <td>@(objMember.Address != null && objMember.Address != "" ? objMember.Address : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Address-2</th>
+                        <td> : </td>
+                        <td>@(objMember.Address2 != null && objMember.Address2 != "" ? objMember.Address2 : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>City</th>
+                        <td> : </td>
+                        <td>@(objMember.City != null && objMember.City != "" ? objMember.City : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>State</th>
+                        <td> : </td>
+                        <td>@(objMember.State != null && objMember.State != "" ? objMember.State : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Zip Code</th>
+                        <td> : </td>
+                        <td>@(objMember.ZipCode != null && objMember.ZipCode != "" ? objMember.ZipCode : "NA")</td>
+                    </tr>
+
+                    <tr>
+                        <th colspan="3"><div class=" aws-title3 pb-0">Spouse Information</div></th>
+
+                    </tr>
+                    <tr>
+                        <th>First Name</th>
+                        <td> : </td>
+                        <td>@(objMember.SpouseFirstName != null && objMember.SpouseFirstName != "" ? objMember.SpouseFirstName : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Last Name</th>
+                        <td> : </td>
+                        <td>@(objMember.SpouseLastName != null && objMember.SpouseLastName != "" ? objMember.SpouseLastName : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td> : </td>
+                        <td>@(objMember.SpouseEmail != null && objMember.SpouseEmail != "" ? objMember.SpouseEmail : "NA")</td>
+                    </tr>
+                    <tr>
+                        <th>Mobile No</th>
+                        <td> : </td>
+                        <td>@(objMember.SpouseCell != null && objMember.SpouseCell != "" ? objMember.SpouseCell : "NA")</td>
+                    </tr>
+
+                    <tr>
+                        <th colspan="3"><div class=" aws-title3 pb-0">Membership Type</div></th>
+
+                    </tr>
+                    <tr>
+                        <th>Membership Type</th>
+                        <td> : </td>
+                        <td>@(objMember.MembershipType != null && objMember.MembershipType != "" ? objMember.MembershipType : "NA")</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="" style="display:none">
+                @if (lstChildrenInfo != null && lstChildrenInfo.Count != 0)
+                {
+                    int i = 1;
+                    <table class="table ">
+                        <thead>
+                            <tr>
+                                <th style="text-align:center">S.No</th>
+                                <th>Name</th>
+                                <th style="text-align:center">Age</th>
+
+                                <th style="text-align:center">+</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in lstChildrenInfo)
+                            {
+                                <tr id="view-@item.ChildrenInfoId">
+                                    <td width="5%" style="text-align:center;" class="border-0">
+                                        <label>@i</label>
+                                    </td>
+                                    <td width="20%" style="" class="t-t-c border-0">@item.FirstName</td>
+                                    <td width="10%" style="text-align:center;" class="t-t-c border-0">
+                                        @item.Age
+                                    </td>
+
+                                    <td width="20%" style="text-align:center;" class="t-t-c border-0">
+                                        <a href="@Url.Action("DeleteChildInfo", "Members", new { ChildInfoId = item.ChildrenInfoId })" class="darkgray-text"><img alt="Delete" title="Delete" src="Content/User/images/delete.gif" class="margin-top-5" /></a>
+                                    </td>
+                                </tr>
+                                i++;
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <h4 class="clearfix font18 t-c light-black-t mobile-font22 tbp5"> No Data Found...</h4>
+                }
+
+            </div>
+        </div>
+
+        <div class="aws-form" id="sriman" style="display: none;">
+            @using (Html.BeginForm("ProfileEdit", "Members", FormMethod.Post, new { enctype = "multipart/form-data", @class = "validation b-m0", @id = "FormMenuItems", @name = "FormMenuItems" }))
+            {
+                @Html.Hidden("MemberId", (Int64)objMember.MemberId)
+                <input type="hidden" name="cname" id="cname" class="cname" value="@cname" />
+
+                <div class="row inner-form-row">
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">First Name <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="FirstName" value="@objMember.FirstName" id="FirstName" placeholder="First Name">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Last Name <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="LastName" value="@objMember.LastName" id="LastName" placeholder="Last Name">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Mobile Number<span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="MobilePhone" value="@objMember.MobilePhone" maxlength="12" onkeypress="Mobilephonenochange(event); return Common.isNumberKey(event);" onpaste="handlePaste(event);" id="MobilePhone" placeholder="Mobile Number" autocomplete="off" />
+
+
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Email Id <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="Email" id="Email" placeholder="Email Id" readonly="readonly" value="@objMember.Email">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6" style="display:none">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Profession <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" id="Occupation" name="Occupation" value="@objMember.Occupation" placeholder="Profession">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6" style="display:none">
+                        <fieldset>
+                            <legend>Alumni (Bachelors)  <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="MBachelors" id="MBachelors" value="@objMember.MBachelors" placeholder="Alumni (Bachelors)">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6" style="display:none">
+                        <fieldset>
+                            <legend>Alumni (Advanced)  <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="MAdvanced" id="MAdvanced" value="@objMember.MAdvanced" placeholder="Alumni (Advanced)">
+                        </fieldset>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="d-flex  justify-content-between mt_2 ">
+                            <div class="">
+                                <div class="aws-title3 pb-0">Contact Information</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Address-1 <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="Address" id="Address" placeholder="Address" value="@objMember.Address">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Address-2 <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="Address2" id="Address2" placeholder="Address" value="@objMember.Address2">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">City <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="City" id="City" placeholder="City" value="@objMember.City">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">State <span class="input-imp">*</span></legend>
+                            <select class="input-box" name="State" id="State" placeholder="State">
+                                <option value="">Select State</option>
+                                <option @(objMember.State == "Alabama" ? "selected=selected" : "") value="Alabama">Alabama</option>
+                                <option @(objMember.State == "Alaska" ? "selected=selected" : "") value="Alaska">Alaska</option>
+                                <option @(objMember.State == "Arizona" ? "selected=selected" : "") value="Arizona">Arizona</option>
+                                <option @(objMember.State == "Arkansas" ? "selected=selected" : "") value="Arkansas">Arkansas</option>
+                                <option @(objMember.State == "California" ? "selected=selected" : "") value="California">California</option>
+                                <option @(objMember.State == "Colorado" ? "selected=selected" : "") value="Colorado">Colorado</option>
+                                <option @(objMember.State == "Connecticut" ? "selected=selected" : "") value="Connecticut">Connecticut</option>
+                                <option @(objMember.State == "Delaware" ? "selected=selected" : "") value="Delaware">Delaware</option>
+                                <option @(objMember.State == "Florida" ? "selected=selected" : "") value="Florida">Florida</option>
+                                <option @(objMember.State == "Georgia" ? "selected=selected" : "") value="Georgia">Georgia</option>
+                                <option @(objMember.State == "Hawaii" ? "selected=selected" : "") value="Hawaii">Hawaii</option>
+                                <option @(objMember.State == "Idaho" ? "selected=selected" : "") value="Idaho">Idaho</option>
+                                <option @(objMember.State == "Illinois" ? "selected=selected" : "") value="Illinois">Illinois</option>
+                                <option @(objMember.State == "Indiana" ? "selected=selected" : "") value="Indiana">Indiana</option>
+                                <option @(objMember.State == "Iowa" ? "selected=selected" : "") value="Iowa">Iowa</option>
+                                <option @(objMember.State == "Kansas" ? "selected=selected" : "") value="Kansas">Kansas</option>
+                                <option @(objMember.State == "Kentucky" ? "selected=selected" : "") value="Kentucky">Kentucky</option>
+                                <option @(objMember.State == "Louisiana" ? "selected=selected" : "") value="Louisiana">Louisiana</option>
+                                <option @(objMember.State == "Maine" ? "selected=selected" : "") value="Maine">Maine</option>
+                                <option @(objMember.State == "Maryland" ? "selected=selected" : "") value="Maryland">Maryland</option>
+                                <option @(objMember.State == "Massachusetts" ? "selected=selected" : "") value="Massachusetts">Massachusetts</option>
+                                <option @(objMember.State == "Michigan" ? "selected=selected" : "") value="Michigan">Michigan</option>
+                                <option @(objMember.State == "Minnesota" ? "selected=selected" : "") value="Minnesota">Minnesota</option>
+                                <option @(objMember.State == "Mississippi" ? "selected=selected" : "") value="Mississippi">Mississippi</option>
+                                <option @(objMember.State == "Missouri" ? "selected=selected" : "") value="Missouri">Missouri</option>
+                                <option @(objMember.State == "Montana" ? "selected=selected" : "") value="Montana">Montana</option>
+                                <option @(objMember.State == "Nebraska" ? "selected=selected" : "") value="Nebraska">Nebraska</option>
+                                <option @(objMember.State == "Nevada" ? "selected=selected" : "") value="Nevada">Nevada</option>
+                                <option @(objMember.State == "New Hampshire" ? "selected=selected" : "") value="New Hampshire">New Hampshire</option>
+                                <option @(objMember.State == "New Jersey" ? "selected=selected" : "") value="New Jersey">New Jersey</option>
+                                <option @(objMember.State == "New Mexico" ? "selected=selected" : "") value="New Mexico">New Mexico</option>
+                                <option @(objMember.State == "New York" ? "selected=selected" : "") value="New York">New York</option>
+                                <option @(objMember.State == "North Carolina" ? "selected=selected" : "") value="Maryland">North Carolina</option>
+                                <option @(objMember.State == "North Dakota" ? "selected=selected" : "") value="North Dakota">North Dakota</option>
+                                <option @(objMember.State == "Ohio" ? "selected=selected" : "") value="Ohio">Ohio</option>
+                                <option @(objMember.State == "Oklahoma" ? "selected=selected" : "") value="Oklahoma">Oklahoma</option>
+                                <option @(objMember.State == "Oregon" ? "selected=selected" : "") value="Oregon">Oregon</option>
+                                <option @(objMember.State == "Pennsylvania" ? "selected=selected" : "") value="Pennsylvania">Pennsylvania</option>
+                                <option @(objMember.State == "Rhode Island" ? "selected=selected" : "") value="Rhode Island">Rhode Island</option>
+                                <option @(objMember.State == "South Carolina" ? "selected=selected" : "") value="South Carolina">South Carolina</option>
+                                <option @(objMember.State == "South Dakota" ? "selected=selected" : "") value="South Dakota">South Dakota</option>
+                                <option @(objMember.State == "Tennessee" ? "selected=selected" : "") value="Tennessee">Tennessee</option>
+                                <option @(objMember.State == "Texas" ? "selected=selected" : "") value="Texas">Texas</option>
+                                <option @(objMember.State == "North Dakota" ? "selected=selected" : "") value="North Dakota">North Dakota</option>
+                                <option @(objMember.State == "Utah" ? "selected=selected" : "") value="Utah">Utah</option>
+                                <option @(objMember.State == "Vermont" ? "selected=selected" : "") value="Vermont">Vermont</option>
+                                <option @(objMember.State == "Virginia" ? "selected=selected" : "") value="Virginia">Virginia</option>
+                                <option @(objMember.State == "Washington" ? "selected=selected" : "") value="Washington">Washington</option>
+                                <option @(objMember.State == "West Virginia" ? "selected=selected" : "") value="West Virginia">West Virginia</option>
+                                <option @(objMember.State == "Wisconsin" ? "selected=selected" : "") value="Wisconsin">Wisconsin</option>
+                                <option @(objMember.State == "Wyoming" ? "selected=selected" : "") value="Wyoming">Wyoming</option>
+                                <option @(objMember.State == "Other" ? "selected=selected" : "") value="Other">Other</option>
+                            </select>
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Zipcode</legend>
+                            <input class="input-box" name="ZipCode" id="ZipCode" placeholder="Zipcode" onkeypress="Mobilephonenochange(event); return Common.isNumberKey(event);" maxlength="6" value="@objMember.ZipCode" type="text" />
+                        </fieldset>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="d-flex  justify-content-between mt_2 ">
+                            <div class="">
+                                <div class="aws-title3 pb-0">Spouse Information</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">First Name <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="SpouseFirstName" id="SpouseFirstName" value="@objMember.SpouseFirstName" placeholder="First Name">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Last Name <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="SpouseLastName" id="SpouseLastName" value="@objMember.SpouseLastName" placeholder="Last Name">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Mobile Number<span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="SpouseCell" id="SpouseCell" maxlength="12" onkeypress="SpouseMobilephonenochange(event); return Common.isNumberKey(event);" value="@objMember.SpouseCell" onpaste="handlePastes(event);" placeholder="Mobile Number" autocomplete="off" />
+
+                        </fieldset>
+                    </div>
+
+                    <div class="col-md-6">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Email Id <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="SpouseEmail" id="SpouseEmail" value="@objMember.SpouseEmail" placeholder="Email Id">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6" style="display:none">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Profession <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" id="SpouseOccupation" name="SpouseOccupation" value="@objMember.SpouseOccupation" placeholder="Profession">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6" style="display:none">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Alumni (Bachelors)  <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="SPouseBachelors" id="SPouseBachelors" value="@objMember.SPouseBachelors" placeholder="Alumni (Bachelors)">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-6" style="display:none">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Alumni (Advanced)  <span class="input-imp">*</span></legend>
+                            <input class="input-box" type="text" name="SPouseAdvanced" id="SPouseAdvanced" value="@objMember.SPouseAdvanced" placeholder="Alumni (Advanced)">
+                        </fieldset>
+                    </div>
+
+
+                    <div class="col-md-12" style="display:none">
+                        <div class="d-flex  justify-content-between mt_2 ">
+                            <div class="">
+                                <div class="cus-sub-head pb-0">India Contact</div>
+                                <p class="mb-0">Please provide native place and contact information in India:</p>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 px-md-0">
+                            <div class="row inner-form-row">
+                                <div class="col-md-6">
+                                    <div class="row inner-form-row">
+                                        <div class="col-md-12">
+                                            <div class=" mt_2 ">
+                                                <div class="">
+                                                    <div class="aws-title3 pb-0" style="font-size: 18px;line-height: 22px; color: #f41515;">SELF</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">Town/City  <span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" name="SelfCity" value="@objMember.SelfCity" id="SelfCity" placeholder="Town/City ">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">District <span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" name="SelfDistrict" id="SelfDistrict" value="@objMember.SelfDistrict" placeholder="District">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset class="svs">
+                                                <legend class="svs">Contact Phone<span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" name="Contact Phone" id="Contact Phone" placeholder="Contact Phone">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">Contact Name<span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" maxlength="12" value="@objMember.SelfPhoneNo" onkeypress="ismobileonchange(event); return Common.isNumberKey(event);" id="SelfPhoneNo" name="SelfPhoneNo" placeholder="Contact Name">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">Your Relation <span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" placeholder="Your Relation" id="SelfRelation" value="@objMember.SelfRelation" name="SelfRelation" placeholder="Your Relation">
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="row inner-form-row">
+                                        <div class="col-md-12">
+                                            <div class=" mt_2 ">
+                                                <div class="">
+                                                    <div class="cus-sub-head pb-0" style="font-size: 18px;line-height: 22px; color: #f41515;">SPOUSE</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">Town/City  <span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" id="SpouseCity" name="SpouseCity" value="@objMember.SpouseCity" placeholder="Town/City ">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class=" class=" svs"">District <span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" id="SpouseDistrict" value="@objMember.SpouseDistrict" name="SpouseDistrict" placeholder="District">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">Contact Phone<span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" maxlength="12" value="@objMember.SpousePhoneNo" onkeypress="ismobileonchange(event); return Common.isNumberKey(event);" id="SpousePhoneNo" name="SpousePhoneNo" placeholder="Contact Phone">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">Contact Name<span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" id="SpouseName" value="@objMember.SpouseName" name="SpouseName" placeholder="Contact Name">
+                                            </fieldset>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <fieldset>
+                                                <legend class="float-none w-auto px-1">Your Relation <span class="input-imp">*</span></legend>
+                                                <input class="input-box" type="text" id="SpouseRelation" value="@objMember.SpouseRelation" name="SpouseRelation" placeholder="Your Relation">
+                                            </fieldset>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="cus-res-table pt-2 pt-md-3">
+
+                            <th colspan="3">
+                                <div class=" aws-title3 pb-0">Children Information</div>
+
+
+
+                                <div class="table table-bordered" id="childinfo">
+                                    @if (objMember.lstChildrenInfo != null && objMember.lstChildrenInfo.Count != 0)
+                                    {
+                                        Int64 i = 0;
+                                        foreach (var Item in objMember.lstChildrenInfo)
+                                        {
+                                            <input type="hidden" id="ChildrenInfoId-@i" name="[@i].ChildrenInfoId" value="@Item.ChildrenInfoId" />
+                                            <div class="child-row row gx-3 align-items-center">
+                                                <div class="col-md-5">
+                                                    <fieldset class="">
+                                                        <legend class="float-none w-auto px-1">Name</legend>
+                                                        <input class="input-box" type="text" name="[@i].FirstName" value="@Item.FirstName" id="FirstName-@i" placeholder="">
+                                                    </fieldset>
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <fieldset class="">
+                                                        <legend class="float-none w-auto px-1">Age</legend>
+                                                        <input class="input-box numberkey" type="text" maxlength="2" name="[@i].Age" value="@Item.Age" id="Age-@i" placeholder="" onkeypress="return Common.isNumberKey(event);">
+                                                    </fieldset>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="">
+                                                        <a class="aws-ad-btn" onclick="addRow()"><i class="bi bi-plus-circle"></i> Add Child</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            i++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="child-row row gx-3 align-items-center">
+                                            <div class="col-md-5">
+                                                <fieldset class="">
+                                                    <legend class="float-none w-auto px-1">Name</legend>
+                                                    <input class="input-box" type="text" name="[0].FirstName" value="" id="FirstName-[0]" placeholder="">
+                                                </fieldset>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <fieldset class="">
+                                                    <legend class="float-none w-auto px-1">Age</legend>
+                                                    <input class="input-box numberkey" type="text" maxlength="2" name="[0].Age" value="" id="Age-[0]" placeholder="" onkeypress="return Common.isNumberKey(event);">
+                                                </fieldset>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class=" d-md-block d-none">
+                                                    <a class="aws-ad-btn" onclick="addRow()"><i class="bi bi-plus-circle"></i> Add Child</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+
+
+                                </div>
+                        </div>
+
+                    </div>
+                    <div class="col-12 text-end">
+                        <a onclick="profile()" style="color:#fff;" class="aws-btn">Cancel</a>
+                        <button type="submit" class="aws-btn">Update</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="clearfix" id="showevents" style="display:none;">
+@*         @{Html.RenderAction("FEEventList", "Members", new { MemberId = objMember.MemberId });}
+ *@
+    </div>
+</div>
+
+
+
+
+
+<!-- The email Modal -->
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#EmailVal").validate({
+            rules: {
+                CHEmail: {
+                    required: true,
+                   
+                     validate_email: true,
+                },
+            },
+            messages: {
+                CHEmail: {
+                    required: "Please enter email address",
+                    validate_email: "Please enter valid email address",
+                },
+            },
+            errorElement: "em",
+            errorPlacement: function (error, element) {
+                // Add the `help-block` class to the error element
+                error.addClass("help-block");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+
+                // Move the error element after the fieldset element
+                if (element.closest("fieldset").length) {
+                    element.closest("fieldset").after(error);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-error").removeClass("has-success");
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-success").removeClass("has-error");
+            }
+
+        });
+
+
+    });
+
+
+
+</script>
+<script type="text/javascript">
+
+        // Custom image extension validator
+        $.validator.addMethod('validImageExtension', function (value, element) {
+            if (element.files && element.files.length > 0) {
+                var ext = element.files[0].name.split('.').pop().toLowerCase();
+                return ['jpg','png','gif','jpeg'].indexOf(ext) !== -1;
+            }
+            return true;
+        }, 'Only allowed extensions are: jpg, png, gif, jpeg');
+
+    $("#pic").validate({
+        rules: {
+            File:      { required: true, validImageExtension: true },
+        },
+        messages: {
+            File2: "Please upload your profile image.",
+           
+        },
+        submitHandler: function (form) {
+            form.submit();
+        },
+        errorElement: "em",
+        errorPlacement: function (error, element) {
+            // Add the `help-block` class to the error element
+            error.addClass("help-block");
+
+            if (element.prop("type") === "checkbox") {
+                error.insertAfter(element.parent("label"));
+            } else {
+                error.insertAfter(element);
+            }
+
+            // Move the error element after the fieldset element
+            if (element.closest("fieldset").length) {
+                element.closest("fieldset").after(error);
+            }
+        },
+        highlight: function (element, errorClass, validClass) {
+            $(element).parents("fieldset").addClass("has-error").removeClass("has-success");
+        },
+        unhighlight: function (element, errorClass, validClass) {
+            $(element).parents("fieldset").addClass("has-success").removeClass("has-error");
+        }
+    });
+
+
+
+</script>
+
+<script>
+   
+                function addRow() {
+
+                    var rowCount = $('.child-row').length;
+                    var newRow = `<div class="child-row row gx-3  align-items-center">
+                    <div class="col-md-5">
+                        <fieldset class="">
+                            <legend class="float-none w-auto px-1">Name</legend>
+                            <input class="input-box" type="text" name="[${rowCount}].FirstName" id="FirstName-${rowCount}" placeholder="">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-2">
+                        <fieldset class="">
+                            <legend class="float-none w-auto px-1">Age</legend>
+                            <input class="input-box numberkey" type="text" maxlength="2" name="[${rowCount}].Age" id="Age-${rowCount}" placeholder="">
+                        </fieldset>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="">
+
+                            <a class="aws-remove-btn" onclick="deleteRow(this)"><i class="bi bi-trash3"></i> Remove</a>
+                        </div>
+                    </div>
+                </div>`;
+                    $('#childinfo').append(newRow);
+                }
+
+                function deleteRow(button) {
+                    var row = $(button).closest('.child-row');
+                    if (row.index() !== 0) { // Check if the row is not the first row
+                        row.remove();
+                    }
+                }
+
+
+   
+
+    function ShowPassword() {
+        var x = document.getElementById("OldPassword");
+        if (x.type === "password") {
+            x.type = "text";
+            $('#eye').addClass('eye-hide');
+        } else {
+            x.type = "password";
+            $('#eye').removeClass('eye-hide');
+
+        }
+    }
+
+    function ShowPassword1() {
+        var x = document.getElementById("NewPassword");
+
+        if (x.type === "password") {
+            x.type = "text";
+            $('#eye').addClass('eye-hide');
+        } else {
+            x.type = "password";
+            $('#eye').removeClass('eye-hide');
+
+        }
+        }
+        function ShowPassword2() {
+            var x = document.getElementById("ConfPassword");
+            if (x.type === "password") {
+                x.type = "text";
+                $('#eye').addClass('eye-hide');
+            } else {
+                x.type = "password";
+                $('#eye').removeClass('eye-hide');
+
+            }
+        }
+</script>
+<!-- close modal -->
+<script>
+    $(document).ready(function () {
+        $("#hide").click(function () {
+            $("#sriman").css("display", "block");
+            $("#showevents").css("display", "none");
+            $("#sri").css("display", "none");
+        });
+
+
+</script>
+<script type="text/javascript">
+        $(document).ready(function () {
+$("#ChangePassword").validate({
+    rules: {
+        OldPassword: {
+            required: true,
+            remote: {
+                type: "POST",
+                url: "@Url.Action("CheckPassword", "Members")", // Ensure this generates the correct URL
+                dataType: "json",
+                data: {
+                       MemberId: @(objMember.MemberId),
+                        OldPassword: function () {
+                        return $("#OldPassword").val();
+                    }
+                },
+                dataFilter: function (data) {
+                    var responseData = JSON.parse(data);
+                    return responseData.ok ? "true" : "false"; // Return strings "true"/"false" as required by jQuery Validate
+                }
+            }
+        },
+        NewPassword: {
+            required: true,
+            validpassword: true // Ensure this custom rule is defined
+        },
+        ConfPassword1: {
+            required: true,
+            equalTo: "#NewPassword"
+        }
+    },
+    messages: {
+        OldPassword: {
+            required: "Please enter your current password",
+            remote: "Your current password is incorrect"
+        },
+        NewPassword: {
+            required: "Please enter a new password"
+        },
+        ConfPassword1: {
+            required: "Please confirm your new password",
+                equalTo: "The passwords do not match With NewPassword"
+        }
+    },
+    submitHandler: function (form) {
+        form.submit();
+    },
+    errorElement: "em",
+    errorPlacement: function (error, element) {
+        error.addClass("help-block");
+        if (element.prop("type") === "checkbox") {
+            error.insertAfter(element.parent("label"));
+        } else {
+            error.insertAfter(element);
+        }
+    },
+    highlight: function (element, errorClass, validClass) {
+        $(element).closest("fieldset").addClass("has-error").removeClass("has-success");
+    },
+    unhighlight: function (element, errorClass, validClass) {
+        $(element).closest("fieldset").addClass("has-success").removeClass("has-error");
+    }
+});
+
+
+
+      });
+</script>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        $("#FormMenuItems").validate({
+            rules: {
+                FirstName: "required",
+                LastName: "required",
+
+                MobilePhone: {
+                    required: true,
+                    validate_phonenumber: true
+                },
+                ZipCode: {
+                    required: false,
+                    digits: true,
+                    number: true,
+                    minlength: 5,
+                    maxlength: 6,
+                },
+        
+                Address: {
+                    required: true,
+                    minlength: 5
+                },
+                State: "required",
+                City: "required",
+
+                Email: {
+                    required: true,
+                    validate_email: true
+                     
+                },
+            },
+            messages: {
+                FirstName: "Please enter your First Name",
+                LastName: "Please enter your Last Name",
+
+                MobilePhone: {
+                    required: "Please enter phone number",
+                    validate_phonenumber: "Please enter valid phone number",
+                },
+                ZipCode: {
+                    digits: "Please enter only numeric characters",
+                    maxlength: "ZipCode must be exactly 6 digits"
+                },
+               
+                Address: {
+                    required: "Please enter address",
+                    minlength: "Your text must be at least 5 characters long"
+                },
+                State: {
+                    required: "Please Select State"
+                },
+                City: {
+                    required: "Please enter city"
+                },
+                Email: {
+                    required: "Please enter email address",
+                    validate_email: "Please enter valid email address",
+                    remote: "This email address is already in use."
+                },
+
+            },
+
+
+            errorElement: "em",
+            errorPlacement: function (error, element) {
+                // Add the `help-block` class to the error element
+                error.addClass("help-block");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+
+                // Move the error element after the fieldset element
+                if (element.closest("fieldset").length) {
+                    element.closest("fieldset").after(error);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-error").removeClass("has-success");
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-success").removeClass("has-error");
+            }
+
+        });
+
+        // Format credit card number with spaces every 4 digits
+        $("#CardNumber").on("input", function () {
+            var value = $(this).val().replace(/\D/g, ''); // Remove non-numeric characters
+            if (value.length > 0) {
+                value = value.match(new RegExp('.{1,4}', 'g')).join(' ');
+            }
+            $(this).val(value);
+        });
+
+        // Restrict CVV input to numbers only
+        $("#Cvv").on("input", function () {
+            var value = $(this).val().replace(/\D/g, ''); // Remove non-numeric characters
+            $(this).val(value);
+        });
+
+    });
+</script>
+
+<style>
+    .text-dark i {
+        background-color: #fff;
+        color: #0c8420;
+        border: 0px;
+        border-radius: 50%;
+        right: 0px;
+        padding: 10px;
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        right: 35px;
+        border: 1px solid #0c8420;
+    }
+
+        .text-dark i:hover {
+            background-color: #fd2e2c;
+            color: #fff;
+            border: 0px;
+            border-radius: 50%;
+            right: 0px;
+            padding: 10px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            right: 35px;
+            border: 1px solid #fd2e2c;
+        }
+    .aws-title.aws-title-2 {
+        justify-content: start;
+        gap: 5px;
+    }
+</style>

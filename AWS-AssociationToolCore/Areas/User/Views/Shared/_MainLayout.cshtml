@@ -1,0 +1,1329 @@
+﻿@using Microsoft.AspNetCore.Http
+@using Microsoft.AspNetCore.Http.Extensions
+@inject IHttpContextAccessor HttpContextAccessor
+
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+
+@{
+    int status = 0;
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+       // Generate version once for this page load
+    var cssVersion = DateTime.Now.Ticks;
+
+    var baseurl = objAppInfo.BaseUrl;
+    var adminurl = objAppInfo.BaseUrl;
+List<AWS_AssociationToolCore.Entities.CommitteeCategoryMaster> availableYears =
+    ViewBag.lstCommitteeCategoriesyears as List<AWS_AssociationToolCore.Entities.CommitteeCategoryMaster>
+    ?? new List<AWS_AssociationToolCore.Entities.CommitteeCategoryMaster>();    // ✅ Fix 1: ConfigurationManager → Configuration
+    var HomeUrl = Configuration["HomeUrl"];
+
+    // ✅ Fix 2: Request.Url.AbsoluteUri → GetDisplayUrl()
+    string refurl = Context.Request.GetDisplayUrl();
+    refurl = refurl.Replace(baseurl, "");
+
+    var location = objAppInfo.AdminImageUrl + "MemberProfileImages/";
+    var objuser = new AWS_AssociationToolCore.Entities.Users();
+
+    AWS_AssociationToolCore.Entities.PageDetails objInnerPages = new AWS_AssociationToolCore.Entities.PageDetails();
+    AWS_AssociationToolCore.Entities.PageDetails objPInnerPages = new AWS_AssociationToolCore.Entities.PageDetails();
+    List<AWS_AssociationToolCore.Entities.News> lstNews = new List<AWS_AssociationToolCore.Entities.News>();
+    List<AWS_AssociationToolCore.Entities.MenuItems> lstMenuItems = new List<AWS_AssociationToolCore.Entities.MenuItems>();
+    List<AWS_AssociationToolCore.Entities.MenuItems> lstMenuItems2 = new List<AWS_AssociationToolCore.Entities.MenuItems>();
+    List<AWS_AssociationToolCore.Entities.MenuItems> lstMenuItems3 = new List<AWS_AssociationToolCore.Entities.MenuItems>();
+    List<AWS_AssociationToolCore.Entities.MenuItems> lstMenuItems4 = new List<AWS_AssociationToolCore.Entities.MenuItems>();
+    List<AWS_AssociationToolCore.Entities.MenuItems> FooterMenuItems = new List<AWS_AssociationToolCore.Entities.MenuItems>();
+    List<AWS_AssociationToolCore.Entities.MenuItems> MenuItems = new List<AWS_AssociationToolCore.Entities.MenuItems>();
+    List<AWS_AssociationToolCore.Entities.Events> lstEvents = new List<AWS_AssociationToolCore.Entities.Events>();
+    AWS_AssociationToolCore.Entities.PageDetails objChapterInnerPages = new AWS_AssociationToolCore.Entities.PageDetails();
+    AWS_AssociationToolCore.Entities.PageDetails objAksharaInnerPages = new AWS_AssociationToolCore.Entities.PageDetails();
+    var imglocEvent = objAppInfo.AdminImageUrl + "events/banners/";
+
+    List<AWS_AssociationToolCore.Entities.Sponsors> lstSponsors = new List<AWS_AssociationToolCore.Entities.Sponsors>();
+    List<AWS_AssociationToolCore.Entities.SponsorCategories> lstSponsorCategories = new List<AWS_AssociationToolCore.Entities.SponsorCategories>();
+    List<AWS_AssociationToolCore.Entities.Sponsors> lstMediaSponsors = new List<AWS_AssociationToolCore.Entities.Sponsors>();
+    List<AWS_AssociationToolCore.Entities.Chapters> lstChapters = new List<AWS_AssociationToolCore.Entities.Chapters>();
+    List<AWS_AssociationToolCore.Entities.MenuItems> lstQuickLinkItems = new List<AWS_AssociationToolCore.Entities.MenuItems>();
+    AWS_AssociationToolCore.Entities.Chapters objcChapters = new AWS_AssociationToolCore.Entities.Chapters();
+    AWS_AssociationToolCore.BLL.Chapters _Chapters = new AWS_AssociationToolCore.BLL.Chapters();
+    AWS_AssociationToolCore.Entities.PageDetails objseodetails = new AWS_AssociationToolCore.Entities.PageDetails();
+    string Year = ViewBag.Year as string ?? "";
+    int Status = 0;
+    int AStatus = 0;
+    Int64 ChapterId = 0;
+    var cname = "";
+    string ChapterName = "";
+
+    cname = ViewBag.cname;
+
+    int qstatus = 0;
+
+    // ✅ Declare outside - accessible everywhere in the view
+// Only flag if user is logged in as Admin role (control panel user)
+// var userroles = "";
+// var roleValue = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+
+// if (roleValue.Contains("Admin") || roleValue.Contains("SuperAdmin,"))
+// {
+//     userroles = roleValue;
+// }
+var userroles = "";
+var sessionRole = Context.Session.GetString("userrole");
+
+if (!string.IsNullOrEmpty(sessionRole))
+{
+    userroles = sessionRole;
+}
+    if (!string.IsNullOrEmpty(cname))
+    {
+        objcChapters = _Chapters.GetChaptersListByName(cname, ref qstatus);
+        ChapterName = cname;
+    }
+
+    ChapterId = objcChapters.ChapterId;
+
+    if (ChapterId == 0)
+    {
+        ChapterId = 1;
+        ChapterName = "global";
+    }
+
+    // ✅ Extract last segment from Request.Path
+    string path = Context.Request.Path;
+    string headingName = "";
+
+    if (!string.IsNullOrEmpty(path))
+    {
+        var segments = path.Trim('/').Split('/');
+        if (segments.Length > 2)
+        {
+            headingName = segments[2];
+        }
+        if (segments.Length > 0)
+        {
+            headingName = segments.Last();
+        }
+    }
+@if (headingName == "donate-now")
+{
+    headingName = "Donate now";
+}
+string currentUserName = "";
+string currentUserEmail = "";
+bool isAuthenticated = false;
+
+if (User?.Identity != null && User.Identity.IsAuthenticated)
+{
+    currentUserName = User.Identity.Name ?? "";
+    
+    // ✅ Get Email from Claims
+    currentUserEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
+    
+    isAuthenticated = true;
+}
+    objInnerPages = _AppInfo.FEGetListMainLayout(
+        ChapterId,
+        headingName,
+       currentUserName,
+        ref lstNews,
+        ref lstSponsors,
+        ref lstSponsorCategories,
+        ref objAppInfo,
+        ref lstMenuItems, ref lstMenuItems2, ref lstMenuItems3, ref lstMenuItems4, ref FooterMenuItems,
+        ref objPInnerPages,
+        ref lstEvents,
+        ref objChapterInnerPages,
+        ref objAksharaInnerPages,
+        ref lstMediaSponsors,
+        ref lstChapters,
+        ref lstQuickLinkItems,
+        ref objseodetails,
+        ref Status);
+
+    if (objseodetails.Heading != null && objseodetails.Heading != "")
+    {
+        ViewBag.PageHeading = objseodetails.Heading;
+        ViewBag.MetaDescription = objseodetails.MetaDescription;
+        ViewBag.MetaKeywords = objseodetails.MetaKeywords;
+        ViewBag.Title = objseodetails.PageTitle;
+    }
+
+    lstMenuItems = objInnerPages.lstMenuItems;
+    lstMenuItems2 = objInnerPages.lstMenuItems2;
+    lstMenuItems3 = objInnerPages.lstMenuItems3;
+    lstMenuItems4 = objInnerPages.lstMenuItems4;
+    FooterMenuItems = objInnerPages.FooterMenuItems;
+    lstChapters = objInnerPages.lstChapters;
+    lstNews = objInnerPages.lstNews;
+    lstSponsors = objInnerPages.lstSponsors;
+    lstSponsorCategories = objInnerPages.lstSponsorCategories;
+    objPInnerPages = objInnerPages.objPInnerPages;
+    lstEvents = objInnerPages.lstEvents;
+    lstQuickLinkItems = objInnerPages.lstQuickLinkItems;
+    objseodetails = objInnerPages.objseodetails;
+
+      var imglocsponsor = objAppInfo.BaseUrl + "Content/Sponsors/";
+
+    MenuItems = lstMenuItems.Concat(lstMenuItems2).Concat(lstMenuItems3).Concat(lstMenuItems4).ToList();
+
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref AStatus);
+
+    string str = "";
+    if (ViewBag.str != null && ViewBag.str != "")
+    {
+        str = ViewBag.str;
+    }
+
+    AWS_AssociationToolCore.Entities.Chapters objChapters = lstChapters.FirstOrDefault(x => x.ChapterId == (ChapterId == 0 ? 1 : ChapterId));
+
+    // ✅ Fix 3: Request.Browser.IsMobileDevice → User-Agent parsing
+// ✅ Fix - use Context.Request in .cshtml files
+var userAgent = Context.Request.Headers["User-Agent"].ToString().ToLower();
+var IsMobile = userAgent.Contains("mobile") ||
+               userAgent.Contains("android") ||
+               userAgent.Contains("iphone") ||
+               userAgent.Contains("ipad");
+
+    AWS_AssociationToolCore.Entities.Members objMember = new AWS_AssociationToolCore.Entities.Members();
+    AWS_AssociationToolCore.BLL.Members _Members = new AWS_AssociationToolCore.BLL.Members();
+    int pcurrentYear = DateTime.Now.Year;
+
+  if (User?.Identity != null && User.Identity.IsAuthenticated)
+{
+        int _qstatus = 0;
+        objMember = _Members.GetMemberFullDetailsByEmail(currentUserEmail, ref _qstatus);
+    }
+
+    // ✅ Fix 4: GetString → SetString for writing session
+    Context.Session.SetString("AppName", objAppInfo.SiteName ?? "");
+    Context.Session.SetString("AppEmail", objAppInfo.CompanyEmail ?? "");
+       var fevicon = objAppInfo.BaseUrl + "Content/faviconlogo/normalimages/";
+    string reneve = "";
+    if (objMember.ExpiryDate != null &&
+        objMember.ExpiryDate != DateTime.MinValue &&
+        objMember.ExpiryDate < DateTime.Now)
+    {
+        reneve = "yes";
+    }
+
+    var lstfChapters = lstChapters.FindAll(ch => !ch.ChapterName.Contains(objChapters.ChapterName));
+
+    var chapterName = Context.Session.GetString("ChapterName");
+    var currentUrl = Context.Request.GetDisplayUrl();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Basic Meta Tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <base href="@(baseurl)" />
+    <meta name="description" content="@((string)ViewBag.MetaDescription != "" && (string)ViewBag.MetaDescription != null ? (string)ViewBag.MetaDescription :
+        (objAppInfo.MetaDescription != null && objAppInfo.MetaDescription != "" ? objAppInfo.MetaDescription : "Enhance your data management with our advanced Association Tool. Effortlessly map relationships, link records, and optimize workflow efficiency. Try now!"))" />
+    <meta name="keywords" content="@((string)ViewBag.MetaKeywords != "" && (string)ViewBag.MetaKeywords != null ? (string)ViewBag.MetaKeywords :
+        (objAppInfo.MetaKeywords != null && objAppInfo.MetaKeywords != "" ? objAppInfo.MetaKeywords : "Association tool, data mapping software, relationship management, link records, workflow optimization, entity association, data linking, automation tool"))" />
+    <title>
+        @((string)ViewBag.Title != "" && (string)ViewBag.Title != null ? (string)ViewBag.Title :
+        (objAppInfo.PageTitle != null && objAppInfo.PageTitle != "" ? objAppInfo.PageTitle : "Powerful Association Tool | Streamline Data Mapping & Relationships"))
+    </title>
+
+     <link rel="icon" href="@fevicon/@objAppInfo.faviconlogo" type="image/x-icon">
+    <link rel="shortcut icon" href="@fevicon/@objAppInfo.faviconlogo" type="image/png" />
+
+    <meta name="author" content="Your Name or Company">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph Meta Tags for social media sharing (Facebook, LinkedIn) -->
+    <meta property="og:title" content="@(objAppInfo.SiteName)">
+    <meta property="og:description" content="A brief description of your website.">
+    <meta property="og:image" content="@(baseurl)image.jpg">
+    <meta property="og:url" content="@(baseurl)">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:site_name" content="@(objAppInfo.SiteName)">
+    <!-- Open Graph Meta Tags for social media sharing (Facebook, LinkedIn) end-->
+    <!-- Favicon -->
+
+
+    <!-- styles links -->
+    <link rel="stylesheet" href="Content/User/css/bootstrap.min.css?v=@cssVersion">
+    <link rel="stylesheet" href="Content/User/css/style.css?v=@cssVersion">
+
+
+    <link rel="stylesheet" href="Content/User/css/responsive.css?v=@cssVersion">
+    <link rel="stylesheet" href="Content/User/css/external.css?v=@cssVersion">
+    <link rel="stylesheet" href="Content/User/css/owl.carousel.min.css?v=@cssVersion">
+    <link rel="stylesheet" href="Content/User/css/owl.theme.default.min.css?v=@cssVersion">
+
+    <!-- For Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css?v=@cssVersion">
+         <link  rel="stylesheet" href="Content/User/css/magnific-popup.min.css?v=@cssVersion">
+
+    <!-- Jquery Liberary -->
+    <script src="Scripts/User/jquery.min.js?v=@cssVersion"></script>
+    <script src="Scripts/User/Common.js?v=@cssVersion"></script>
+    <script src="Scripts/User/bootstrap.min.js?v=@cssVersion"></script>
+    <script src="Scripts/User/jquery-validate.min.js?v=@cssVersion"></script>
+    <script src="Scripts/User/jquery.magnific-popup.min.js?v=@cssVersion"></script>
+    <style>
+        /* Styles for the popup */
+        #RenewalAlert {
+            background-color: #000000a1;
+        }
+    </style>
+    <script type="text/javascript">
+        function openPopup() {
+            // Show the popup
+            document.getElementById('RenewalAlert').style.display = 'block';
+
+            // Disable onclick on the entire page
+            document.body.onclick = function (event) {
+                if (!document.getElementById('RenewalAlert').contains(event.target)) {
+                    // Your onclick functionality for the entire page goes here
+
+                }
+            };
+        }
+        $(document).ready(function () {
+            if ('@reneve' == 'yes') {
+                openPopup();
+            }
+
+             if ('@userroles' != null && '@userroles' != "")
+             {
+            $('#LogoutModel').modal("show");
+            }
+
+
+
+        });
+    </script>
+    <script type="text/javascript">
+        function NewletterShow() {
+            $('#NLSubscription').modal('show');
+        }
+    </script>
+    <script>
+
+        function Chapter(ChapterName) {
+    let chapterButton = document.getElementById('chapterButton');
+
+    if (chapterButton) {
+        chapterButton.innerHTML = '<i class="bi bi-list-ul"></i> ' + ChapterName;
+    } else {
+        console.error("Element with ID 'chapterButton' not found.");
+    }
+
+        window.location.href = '@baseurl' + ChapterName + '/index';
+
+}
+
+    </script>
+</head>
+
+
+
+
+
+
+
+
+
+
+
+
+<body>
+<!-- ===== COMMITTEE POPUP HTML ===== -->
+<div id="committeePopup" style="display:none;">
+    <div class="popup">
+        <div class="popup-top"></div>
+        <button class="popup-close" onclick="closeCommitteePopup()">&#x2715;</button>
+        <div class="popup-avatar-wrap">
+            <img id="popupImg" src="" alt="">
+        </div>
+        <div class="popup-body">
+            <div class="popup-name" id="popupName"></div>
+            <div class="popup-divider"></div>
+            <div class="popup-desig" id="popupDesig"></div>
+            <div class="popup-desc mt-3" id="popupDesc"></div>
+
+            <!-- SHARE SECTION -->
+            <div class="popup-share-section">
+                <p class="popup-share-label">Share this</p>
+                <div class="popup-share-buttons">
+
+                    <a id="shareWhatsapp" href="#" target="_blank" class="share-btn whatsapp" onclick="handleWhatsApp(event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
+                            <path d="M20.52 3.48A11.93 11.93 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.16 1.6 5.97L0 24l6.22-1.57A11.94 11.94 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52zM12 22c-1.85 0-3.66-.5-5.23-1.44l-.37-.22-3.89.98 1.03-3.77-.24-.38A9.93 9.93 0 0 1 2 12C2 6.48 6.48 2 12 2c2.67 0 5.18 1.04 7.07 2.93A9.93 9.93 0 0 1 22 12c0 5.52-4.48 10-10 10zm5.47-7.3c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.47-.89-.79-1.48-1.76-1.66-2.06-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.6-.91-2.2-.24-.58-.48-.5-.67-.51H6.93c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.27.49 1.7.63.72.23 1.37.2 1.88.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/>
+                        </svg>
+                        WhatsApp
+                    </a>
+
+                    <a id="shareFacebook" href="#" target="_blank" class="share-btn facebook" onclick="handleFacebook(event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
+                            <path d="M24 12.07C24 5.41 18.63 0 12 0S0 5.41 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.04V9.41c0-3.02 1.8-4.7 4.54-4.7 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.88v2.27h3.32l-.53 3.49h-2.79V24C19.61 23.1 24 18.1 24 12.07z"/>
+                        </svg>
+                        Facebook
+                    </a>
+
+                    <a id="shareTwitter" href="#" target="_blank" class="share-btn twitter" onclick="handleTwitter(event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        Twitter
+                    </a>
+
+                    <a id="shareGmail" href="#" target="_blank" class="share-btn gmail" onclick="handleGmail(event)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="white" viewBox="0 0 24 24">
+                            <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-2.023 2.309-3.178 3.927-1.964L12 9.508l8.073-6.015C21.69 2.28 24 3.434 24 5.457z"/>
+                        </svg>
+                        Gmail
+                    </a>
+
+                </div>
+            </div>
+            <!-- END SHARE SECTION -->
+
+        </div>
+    </div>
+</div>
+ 
+    <!-- ===== COMMITTEE POPUP SCRIPT ===== -->
+<script>
+function openCommitteePopupFromBtn(btn) {
+    var name  = btn.getAttribute('data-name');
+    var desig = btn.getAttribute('data-desig');
+    var desc  = btn.getAttribute('data-desc');
+    var img   = btn.getAttribute('data-img');
+    openCommitteePopup(name, desig, desc, img);
+}
+
+function openCommitteePopup(name, desig, desc, img) {
+    document.getElementById('popupName').textContent  = name;
+    document.getElementById('popupDesig').textContent = desig;
+    document.getElementById('popupImg').src           = img;
+
+    // If you have a description element in the popup:
+    var descEl = document.getElementById('popupDesc');
+    if (descEl) descEl.innerHTML = desc; // use innerHTML since Description may have HTML tags
+
+    var el = document.getElementById('committeePopup');
+    el.style.display        = 'flex';
+    el.style.position       = 'fixed';
+    el.style.inset          = '0';
+    el.style.background     = 'rgba(0,0,0,0.55)';
+    el.style.zIndex         = '999999';
+    el.style.alignItems     = 'center';
+    el.style.justifyContent = 'center';
+    el.style.padding        = '20px';
+}
+
+function closeCommitteePopup() {
+    document.getElementById('committeePopup').style.display = 'none';
+}
+
+document.getElementById('committeePopup').addEventListener('click', function(e) {
+    if (e.target === this) closeCommitteePopup();
+});
+</script>
+    <div class="modal fade aws-modal" id="LogoutModel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="aws-title mb-3"><b>Important:</b> Control Panel Session Active</div>
+
+                <!-- Modal body -->
+                <div class="aws-form">
+                    <div class="row">
+
+                        <div class="email-container">
+                            <p><b>Dear Users,</b></p>
+                            <p>It seems you are currently logged into the control panel. To ensure security and proper functionality, we kindly request you to log out from the control panel before accessing the website.</p>
+                            <p>Please log out of your control panel session and try again.</p>
+                            <p>Thank you for your co-operation!</p>
+                            <p>
+                                Best regards,<br>
+                                <strong>Telugu Association</strong>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Modal footer -->
+                <div class="col-md-12 text-end">
+                    <a href="@Url.Action("LogOff","Members")" class="aws-btn3" onclick="">LogOut</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="modal aws-modal" id="RenewalAlert">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius:12px; padding: 10px 20px;">
+            
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <span style="font-size:28px;">⚠️</span>
+                <div class="aws-title2" style="margin:0; font-size:22px; color:#1e0002;">
+                    Membership Renewal Alert
+                </div>
+            </div>
+
+            <hr style="margin: 8px 0 16px 0; border-color:#f0e0e0;" />
+
+            <div class="col-md-12 px-0">
+
+                <p class="mb-1">
+                    <b>Dear @objMember.FirstName @objMember.LastName,</b>
+                </p>
+
+                <p style="line-height:1.7; color:#333;">
+                    Your membership at <b>@objAppInfo.SiteName</b> has <span style="color:red; font-weight:600;">expired</span> 
+                    or is due for renewal. We truly value your continued support and would love to have you stay 
+                    as part of our community. Renew today to continue enjoying exclusive member benefits, 
+                    discounts, and premium access without interruption.
+                </p>
+
+                <div style="background:#fff5f5; border-left: 4px solid #cc0000; border-radius:6px; padding:12px 16px; margin: 14px 0;">
+                    <p style="margin:0; font-size:13px; color:#888;">Membership Expired On</p>
+                    <p style="margin:4px 0 0; font-size:20px; font-weight:700; color:#1e0002;">
+                        📅 @objMember.ExpiryDate.ToString("MMMM dd, yyyy")
+                    </p>
+                </div>
+
+                <p style="font-size:13px; color:#888; margin-bottom:18px;">
+                    ⚡ Renew now to avoid losing access to member-only features and upcoming events.
+                </p>
+
+                <div class="text-center" style="margin-bottom:10px;">
+                    <a href="@Url.Action("MembershipRenewal", "Members", new { Area = "User", Astr = "renewal" })"
+                       class="aws-btn3"
+                       style="display:inline-block; font-size:17px; padding:12px 50px; 
+                              font-weight:bold; color:white; border-radius:8px; 
+                              text-decoration:none; background:#cc0000;">
+                        🔄 Renew My Membership Now
+                    </a>
+                </div>
+            
+            
+                <div class="text-center" style="margin-bottom:10px;">
+                    <a href="@Url.Action("LogOff", "Members", new { Area = "User"})"
+                       class="bi bi-box-arrow-left"
+                       style="display:inline-block;
+                              font-size: 15px;
+                              padding: 5px 27px;
+                              font-weight:bold;
+                              width: 18%;
+                              color:white;
+                              border-radius:8px;
+                              text-decoration:none;
+                              background:#cc0000;">
+                        Log Out
+                    </a>
+                </div>
+                <p class="text-center" style="font-size:12px; color:#aaa; margin-top:10px;">
+                    Need help? <a href="contact-us" style="color:#cc0000;">Contact Support</a>
+                </p>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@*     <div class="modal aws-modal" id="RenewalAlert">
+        <div class="modal-dialog modal-lg ">
+            <div class="modal-content">
+                <div class="aws-title2 mb-3">Membership Renewal Alert</div>
+
+                <div class="col-md-12 px-0">
+                    <p class="mb-0 ">
+                        <b>Dear @objMember.FirstName @objMember.LastName!</b>
+                    </p>
+                    <p>We hope you've enjoyed the exclusive benefits of being a valued member at <b>@objAppInfo.SiteName</b>. Your membership is due for renewal, and we'd hate for you to miss out on another year of perks, discounts, and premium access.</p>
+
+
+                    <h4 class="pres-name aws-title2 mb-3 mt-2 text-start"><span style="color:#1e0002;">Renewal Deadline:</span> @objMember.ExpiryDate.ToString("MM/dd/yyyy")</h4>
+
+                    <div class=" aws-btn3 dis-in text-center m-2 font16" style="margin-left: 213px !important;">
+                        <a href="@Url.Action("MembershipRenewal", "Members", new { Area="User", Astr = "renewal" })" style="font-size: 18px;padding: 10px 28px 10px 28px;font-weight: bold;color:white;">Renew Now</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+ *@    <div class="modal fade aws-modal" id="loginpop" aria-labelledby="changePasswordLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="aws-title2 mb-3">Login</div>
+                <!-- content goes here -->
+                <div class="aws-alert-info mb-3" style="font-size: 12px;"><span class="text-danger"><i class="bi bi-filetype-key"></i> Note:-  </span>Password format should be like 'Minimum 8 characters (atleast one special character &amp; one numeric character)'</div>
+                <div class="aws-form">
+                    @using (Html.BeginForm("CULLogOn", "Members", FormMethod.Post, new { name = "MLogin", id = "MLogin" }))
+                    {
+<input type="hidden" name="ReturnUrl" value="@Context.Request.GetDisplayUrl()" />
+<input id="MemberId" name="MemberId" type="hidden" value="@objMember.MemberId">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <fieldset class="toggle-password">
+                                    <legend class="float-none w-auto px-1">Email <span class="input-imp">*</span></legend>
+                                    <input class="input-box" type="text" id="EmailC1" name="CulturalEmail" placeholder="Email Id">
+                                    <i class="bi bi-eye-slash"></i>
+                                </fieldset>
+                            </div>
+                            <div class="col-md-12 ">
+                                <fieldset class="toggle-password">
+                                    <legend class="float-none w-auto px-1"> password <span class="input-imp">*</span></legend>
+                                    <input class="input-box" type="password" id="PasswordC1" name="Password" placeholder="password">
+<i class="bi bi-eye-slash toggle-icon" onclick="togglePassword('PasswordC1', this)"></i>
+                                </fieldset>
+                            </div>
+
+                            <div class="col-md-12 text-end">
+                                <button type="submit" class=" aws-btn3" onclick="">Submit</button>
+                            </div>
+                        </div>}
+                </div>
+
+
+                <!-- content goes here -->
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade aws-modal" id="renewalConfirm-popup" aria-labelledby="editProfileLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="aws-title2 mb-3">Change profile picture</div>
+                <div class="cmn-inner-form w-100">
+
+                    @if (objMember.objMembershipOrder.ExpiryDate != null && objMember.objMembershipOrder.ExpiryDate != DateTime.MinValue)
+                    {
+                        if (ViewBag.daysRemaining <= 60)
+                        {
+                            <h4 class="black-t font18 poppins-medium t-c t-m0" style="font-size: 16px; font-weight: bold; line-height: 30px;">
+                                Dear <span style="color:#ff6a00">@objMember.FirstName @objMember.LastName,</span> Your membership expires on
+                                <span style="color:#ff6a00">(@objMember.objMembershipOrder.ExpiryDate.ToString("MM/dd/yyyy")), </span>
+                                Please <u class="px-2 clr1"> <a href="@Url.Action("MembershipRenewal", "Members")" class="clr1 d-inline-block">Click here to Renew.</a></u>
+                            </h4> }
+                        else if (ViewBag.daysRemaining == 0)
+                        {
+                            <h4 class="black-t font18 poppins-medium t-c t-m0" style="font-size: 16px; font-weight: bold; line-height: 30px;">
+                                Dear <span style="color:#ff6a00">@objMember.FirstName @objMember.LastName,</span> The expiry date has passed,
+                                <u class="px-2 clr1"><a href="@Url.Action("MembershipRenewal", "Members")" class="clr1 d-inline-block">Click here to Renew.</a></u>
+                            </h4> }
+                        else
+                        {
+                            <h4 class="black-t font18 poppins-medium t-c t-m0" style="font-size: 16px; font-weight: bold; line-height: 30px;">
+                                Dear <span style="color:#ff6a00"> @objMember.FirstName @objMember.LastName,</span> Your membership expires on
+                                <span style="color:#ff6a00">(@objMember.objMembershipOrder.ExpiryDate.ToString("MM/dd/yyyy")),</span> Please <a href="@Url.Action("MembershipRenewal", "Members")">Click here to Renew.</a>
+                            </h4>}
+                    }
+
+                    <article class="clearfix p8 white-bg t-c">
+
+                        <article class="clearfix" style="margin-left: auto; margin-right: auto; display: inherit; margin-right: 20px; margin-bottom:20px;">
+                            <a href="@Url.Action("MembershipRenewal", "Members", new { str = "renewal" })" title="Proceed To Pay Now">
+                                <input type="submit" value="Proceed To Pay Now" class="cmn-form-btn" />
+                            </a>
+                        </article>
+                    </article>
+                </div>
+                <!-- content goes here -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modals -->
+    <!-- Edit Profile Modal -->
+    <div class="modal fade aws-modal" id="editProfile" aria-labelledby="editProfileLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="aws-title2 mb-3">Change profile picture</div>
+                <!-- content goes here -->
+                @using (Html.BeginForm("ProfilePic", "Members", FormMethod.Post, new { enctype = "multipart/form-data", @class = "validation", id = "pic", name = "pic" }))
+                {
+                    @Html.Hidden("PCMemberId", (Int64)@objMember.MemberId)
+                    <div class="aws-form">
+                        <form action="">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <fieldset>
+                                        <legend class="float-none w-auto px-1">Upload Image</legend>
+                                        <input class="input-box" type="file" name="File" id="File" placeholder="Email Id">
+
+                                    </fieldset>
+                                </div>
+                                <div class="col-md-12 text-end">
+                                    <button type="submit" class="aws-btn3">Submit</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>}
+
+                <!-- content goes here -->
+            </div>
+        </div>
+    </div>
+    <!-- Change Password Modal -->
+    <div class="modal fade aws-modal" id="changeEmail" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="aws-title2 mb-3">Change Email Id</div>
+                <!-- content goes here -->
+                <div class="aws-form">
+                    @using (Html.BeginForm("ProfileEmailUpdate", "Members", FormMethod.Post, new { enctype = "multipart/form-data", @class = "validation", id = "EmailVal", name = "EmailVal" }))
+                    {
+                        @Html.Hidden("CEMemberId", (Int64)objMember.MemberId)
+                        <div class="row">
+                            <div class="col-md-12">
+                                <fieldset class="toggle-password">
+                                    <legend class="float-none w-auto px-1">Email<span class="input-imp">*</span></legend>
+                                    <input class="input-box" type="text" id="CHEmail" name="CHEmail" value="@objMember.Email" placeholder="Email*">
+                                </fieldset>
+                            </div>
+
+                            <div class="col-md-12 text-end">
+                                <button type="submit" class=" aws-btn3" onclick="">UPDATE</button>
+                            </div>
+                        </div>}
+                </div>
+
+
+                <!-- content goes here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal End -->
+    <!-- Change Password Modal -->
+    <div class="modal fade aws-modal" id="changePassword" aria-labelledby="changePasswordLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="aws-title2 mb-3">Change Password</div>
+                <!-- content goes here -->
+                <div class="aws-alert-info mb-3" style="font-size: 12px;"><span class="text-danger" style="
+    font-family: 'Poppins-SemiBold';
+    font-size: 16px;
+"><i class="bi bi-filetype-key"></i> Note:-  </span>Password format should be like 'Minimum 8 characters (atleast one special character &amp; one numeric character)'</div>
+                <div class="aws-form">
+                    @using (Html.BeginForm("ChangePassword", "Members", FormMethod.Post, new { enctype = "multipart/form-data", @class = "validation", id = "ChangePassword", name = "ChangePassword" }))
+                    {
+                        @Html.Hidden("CPMemberId", (Int64)objMember.MemberId)
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <fieldset class="toggle-password">
+                                    <legend class="float-none w-auto px-1">Current password <span class="input-imp">*</span></legend>
+                                    <input class="input-box" type="password" id="OldPassword" name="OldPassword" placeholder="Old Password">
+                                    <i class="bi bi-eye-slash toggle-icon" onclick="togglePassword('OldPassword', this)"></i>
+                                </fieldset>
+                            </div>
+
+                            <div class="col-md-12">
+                                <fieldset class="toggle-password">
+                                    <legend class="float-none w-auto px-1">New Password <span class="input-imp">*</span></legend>
+                                    <input class="input-box" type="password" id="NewPassword" name="NewPassword" placeholder="New Password">
+                                    <i class="bi bi-eye-slash toggle-icon" onclick="togglePassword('NewPassword', this)"></i>
+                                </fieldset>
+                            </div>
+
+                            <div class="col-md-12">
+                                <fieldset class="toggle-password">
+                                    <legend class="float-none w-auto px-1">Retype Password <span class="input-imp">*</span></legend>
+                                    <input class="input-box" type="password" id="ConfPassword1" name="ConfPassword1" placeholder="Retype Password">
+                                    <i class="bi bi-eye-slash toggle-icon" onclick="togglePassword('ConfPassword1', this)"></i>
+                                </fieldset>
+                            </div>
+                            <div class="col-md-12 text-end">
+                                <button type="submit" class="aws-btn3">Submit</button>
+                            </div>
+                        </div>}
+                </div>
+
+
+                <!-- content goes here -->
+            </div>
+        </div>
+    </div>
+    <!-- Header section -->
+    <header class="header d-flex align-items-center wow fadeInUp" id="header">
+        <div class="container">
+            <div class="header-nav">
+                <div class="text-start">
+                    @if (this.User.Identity.IsAuthenticated && User.Identity.IsAuthenticated && !string.IsNullOrEmpty(Context.Session.GetString("username")))
+                    {
+                        <a href="@Url.Action("Profile","Members", new { tab = "Profile", cname= @ChapterName })">
+                            <i class="mobile-nav-toggle mobile-nav-show bi bi-list"></i>
+                        </a> }
+                    else
+                    {
+                        <a href="@Url.Action("LogOn","Members")">
+                            <i class="mobile-nav-toggle mobile-nav-hide d-none bi bi-x"></i>
+                        </a>}
+                </div>
+                <nav id="navbar" class="navbar">
+                    @if (lstMenuItems != null && lstMenuItems.Count != 0)
+                    {
+                        <ul class="">
+<li class="menu-active">
+    <a href="@($"{chapterName}/index")">Home</a>
+</li>                            @foreach (var item in lstMenuItems)
+                            {
+                                Int64 menu2Count = lstMenuItems2.Count(x => x.PageParentId == item.MenuItemId);
+
+                                <li class="menu-item-has-children">
+                                    <a href="@(item.DocumentUrl != null && item.DocumentUrl != "" ? adminurl + "Content/PageDocuments/" + item.DocumentUrl : (item.OtherUrl != null && item.OtherUrl != "" ? item.OtherUrl : (item.PageUrl != null && item.PageUrl != "" ? "p/" + item.PageUrl + "?mrid=" + item.MenuItemId : Context.Session.GetString("ChapterName") + "/update-soon")))" target="@item.Target">@item.DisplayName<i class="bi dropdown-indicator bi-chevron-down"></i></a>
+                                    @if (lstMenuItems2 != null && lstMenuItems2.Count != 0)
+                                    {
+                                        if (item.SubMenuItemCount != 0)
+                                        {
+
+                                            <ul class="sub-menu ">
+
+                                                @foreach (var item2 in lstMenuItems2)
+                                                {
+                                                    if (item.MenuItemId == item2.PageParentId)
+                                                    {
+                                                        Int64 menu3Count = lstMenuItems3.Count(x => x.PageParentId == item2.MenuItemId);
+                                                        if ( this.User.Identity.IsAuthenticated && this.User.Identity.Name != null && Context.Session != null && Context.Session.GetString("ChapterName") != null)
+                                                        {
+                                                            if (item2.DisplayName != "Become a Member")
+                                                            {
+                                                                <li><a href="@(item2.DocumentUrl != null && item2.DocumentUrl != "" ? adminurl + "Content/PageDocuments/" + item2.DocumentUrl : (item2.OtherUrl != null && item2.OtherUrl != "" ? item2.OtherUrl : (item2.PageUrl != null && item2.PageUrl != "" ? "p/" + item2.PageUrl + "?mrid=" + item2.MenuItemId : Context.Session.GetString("ChapterName")+ "/update-soon")))" target="@item2.Target">@item2.DisplayName</a></li>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <li><a href="@(item2.DocumentUrl != null && item2.DocumentUrl != "" ? adminurl + "Content/PageDocuments/" + item2.DocumentUrl : (item2.OtherUrl != null && item2.OtherUrl != "" ? item2.OtherUrl : (item2.PageUrl != null && item2.PageUrl != "" ? "p/" + item2.PageUrl + "?mrid=" + item2.MenuItemId : Context.Session.GetString("ChapterName") + "/update-soon")))" target="@item2.Target">@item2.DisplayName</a></li>
+                                                        }
+                                                    }
+                                                }
+
+                                            </ul>}
+                                    }
+                                </li>
+                            }
+
+
+                                                        @if ( this.User.Identity.IsAuthenticated && this.User.Identity.Name != null && Context.Session != null && Context.Session.GetString("ChapterName") != null)
+                            {
+                                <li class="login-n"><a href="@Url.Action("Profile","Members", new { tab = "Profile", cname= @ChapterName })"><img class="lock-icon pe-1" src="Content/User/images/login.png" alt="AWS Association Tool Profile">Profile </a></li>
+                            }
+
+                            else
+                            {
+                                <li class="login-n"><a href="@Url.Action("LogOn","Members")"><img class="lock-icon pe-1" src="Content/User/images/login.png" alt="AWS Association Tool Login">Login</a></li>
+                            }
+                        </ul>}
+                </nav>
+            </div>
+        </div>
+    </header>
+    @if (objAppInfo.chapterStatus == "Yes")
+    {
+        <div class="offcanvas offcanvas-start" id="chaptersMenu">
+            <div class="offcanvas-header">
+                <h1 class="sec-title2 mb-0 pt-3">Chapters</h1>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+            </div>
+            <div class="offcanvas-body chapter-canvas">
+                @if (lstfChapters != null && lstfChapters.Count != 0)
+                {
+                    <a class="bi" onclick="Chapter('@AWS_AssociationToolCore.BLL.Common.EncodeURL("Global")')" data-id="Global">Global</a> foreach (var item in lstfChapters)
+                    {
+                        if (item.ChapterId != 1)
+                        {
+                            <a class="bi" onclick="Chapter('@AWS_AssociationToolCore.BLL.Common.EncodeURL(item.ChapterName)')" data-id="@item.ChapterName">@item.ChapterName</a>}
+                    }
+                }
+
+            </div>
+        </div>}
+
+    <div class="position-relative">
+        @if (objAppInfo.chapterStatus == "Yes")
+        {
+            <button class="chapter-btn" id="chapterButton" type="button" data-bs-toggle="offcanvas" data-bs-target="#chaptersMenu">
+                <i class="bi bi-list-ul"></i>  @objChapters.ChapterName
+            </button>
+        }
+
+        <a href="@($"{chapterName}/index")">
+            <div class="logo-header">
+                <img class="logo-img img-fluid  my-0 logo_img_set" src="Content/User/images/logofinal.jpg" alt="AWS Association Tool Logo">
+                <img class="mobile-logo img-fluid" src="Content/User/images/mobile-logofinalmob.gif" alt="AWS Association tool site Logo">
+            </div>
+        </a>
+    </div>
+
+
+   
+        <div class="header-btm-br"></div> <!-- Header section end --> <!-- letest News -->
+
+        <div class="latest-sec pos-relative">
+            <div class="container">
+                <div class="row gx-0 justify-center align-items">
+                    <div class="col-md-12">
+                        <div class="latest-block d-inline-flex w-100 align-items">
+                            <div class="latest-hd-wrap"><span class="latest-hd">News & Updates<img src="Content/User/images/group.png" alt=""></span> </div>
+                            <div class="latest-content">
+                               <div class="news">
+                      
+                     
+                            @if (lstNews != null && lstNews.Count != 0)
+                            {
+                                 <ul class="latestnew-li">
+                                @foreach (var item in lstNews)
+                                {
+
+                                    <li><a href="@Url.Action("Index", "News", new { nid = item.NewsId })">@item.Title</a></li>
+                                   
+                                }
+                            </ul>
+                            }
+                            else
+                            {
+                                 <ul class="latestnew-li">
+                            <li><a href="@Url.Action("Index", "News")">AWS Telugu Association | Preserving Andhra Culture & Heritage in the USA</a></li>
+                            </ul>
+
+                            }
+                
+                        
+                    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- letest News end --> <!-- Homepage  body content section -->
+
+
+    <div class="main-bg position-relative">
+
+        <!-- button list start -->
+        <div class="banner-main">
+            <div class="container">
+                <div class="banner-block">
+
+                    <div class="banner-left">
+                        <div class="ban-bg innban-bg position-relative">
+                            <!---  Buttons Section Start ------>
+                            <div class="button-block innbutton-block">
+                                @if (lstQuickLinkItems != null && lstQuickLinkItems.Count != 0)
+                                {
+                                    <ul class="buttonslis">
+
+
+                                        @foreach (var item in lstQuickLinkItems)
+                                        {
+                                            if (this.User.Identity.IsAuthenticated && this.User.Identity.Name != null && Context.Session != null && Context.Session.GetString("ChapterName")!= null)
+                                            {
+                                                if (item.DisplayName == "Membership")
+                                                {
+                                                    <li>
+                                                        <a class="btn3" href="@Url.Action("Profile","Members", new { tab = "Profile", cname= @ChapterName })">
+                                                            <p class="mb-0">profile <span class="clk"> click here</span></p>
+                                                            <span class="btn-ico"><img src="Content/User/images/b1.png" alt=""></span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                                else
+                                                {
+                                                    <li>
+                                                        <a class="btn3" href="@(item.DocumentUrl != null && item.DocumentUrl != "" ? adminurl + "Content/PageDocuments/" + item.DocumentUrl : (item.OtherUrl != null && item.OtherUrl != "" ? item.OtherUrl : (item.PageUrl != null && item.PageUrl != "" ? "p/" + item.PageUrl + "?mrid=" + item.MenuItemId : Context.Session.GetString("ChapterName") + "/update-soon")))">
+                                                            <p class="mb-0">@item.DisplayName <span class="clk"> click here</span></p>
+                                                            <span class="btn-ico"><img src="Content/User/images/b1.png" alt=""></span>
+                                                        </a>
+                                                    </li>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <li>
+                                                    <a class="btn3" href="@(item.DocumentUrl != null && item.DocumentUrl != "" ? adminurl + "Content/PageDocuments/" + item.DocumentUrl : (item.OtherUrl != null && item.OtherUrl != "" ? item.OtherUrl : (item.PageUrl != null && item.PageUrl != "" ? "p/" + item.PageUrl + "?mrid=" + item.MenuItemId : Context.Session.GetString("ChapterName") + "/update-soon")))">
+                                                        <p class="mb-0">@item.DisplayName <span class="clk"> click here</span></p>
+                                                        <span class="btn-ico"><img src="Content/User/images/b1.png" alt=""></span>
+                                                    </a>
+                                                </li>
+                                            }
+                                        }
+                                    </ul>}
+                            </div>
+                            <!---  Buttons Section End ------>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- button list start -->
+
+        <div class="container">
+            <div class="aws-inner-content">
+               @if (currentUrl.Contains("profile"))
+{
+    <div class="aws-profile-grid-two">
+        @RenderBody()
+    </div>
+}
+                else
+                {
+                    <div class="aws-inner-grid-two">
+                        <div class="aws-left-sec">
+                            <div class="aws-title">
+                                @ViewBag.PageHeading
+                               @if (currentUrl.Contains("photo-gallery"))
+                                {
+                                    <div style="font-size: 16px;">
+                                        <div class="d-flex flex-row align-items-center gap-2">
+                                            <div class="">
+                                                <label for="Sort" class="mb-0">Year</label>
+                                            </div>
+                                            <div class="select_style">
+                                                <select class="input-box px-2" id="Sort" style="border-radius: 50px;" onchange="PhotosBind();">
+
+                                                    @for (int i = (DateTime.Now.Year); i >= (DateTime.Now.Year - 6); i--)
+                                                    {
+                                                        <option @(ViewBag.Year == i ? "selected=selected" : "") value="@i">@i</option>
+                                                    }
+
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    }
+                                                                   @if (ViewBag.PageHeading == "Leadership")
+                                {
+                                    <div style="font-size: 16px;">
+                                        <div class="d-flex flex-row align-items-center gap-2">
+                                            <div class="">
+                                                <label for="Sort" class="mb-0">Year</label>
+                                            </div>
+                                            <div class="select_style">
+                                                <select class="input-box px-2" id="Sort" style="border-radius: 50px;" onchange="PhotosBind();">
+@if (availableYears != null && availableYears.Count != 0)
+{
+    @foreach (var item in availableYears.OrderBy(x => x.YearId))
+    {
+        <option @(item.YearId.ToString() == Year ? "selected=selected" : "") value="@item.YearId">
+            @item.YearId
+        </option>
+    }
+}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    }
+           
+
+                            </div>
+                    
+                           
+                            <div class="aws-bdr"></div> <!-- Member Notification Alert -->
+                            @if (ViewBag.PageHeading == "Become a Member")
+                            {
+                                <div class="aws-alert-info mb-3">
+                                    <i class="bi bi-bell"></i> Already Registered ?
+                                    <a class="" href="login">Login Here</a>
+                                </div>
+                            }
+
+                            @RenderBody()
+                        </div>
+                           @if (!refurl.Contains("qrcode-preview"))
+                           {
+                       if (@headingName != "sponsorship")
+                       {
+                            <div class="aws-right-sec">
+                                @if (lstSponsorCategories != null)
+                                {
+                                    int i = 1;
+
+
+                                    <div class="aws-sponsers">
+
+                                        <div class="row gy-lg-0 gy-4 gx-2">
+                                            @foreach (var SponsorCategory in lstSponsorCategories)
+                                            {
+                                                if (lstSponsors != null && lstSponsors.Count != 0 && SponsorCategory.SponsorsCount != 0)
+                                                {
+                                                    <div class="col-lg-12 col-md-4 col-sm-6 col-6">
+
+                                                        <div class="">
+                                                            <a href="sponsorship">
+                                                                <h4 class="sec-title2 text-center @(i > 1 ? "mt-lg-3 " : " ")" style="background-color: #0c8420; color: white;">@SponsorCategory.CategoryName</h4>
+                                                            </a>
+                                                            <div class="aws-ticker4 aws-cmn-ticker">
+                                                                <ul class="m-0 p-0">
+                                                                    @foreach (var item in lstSponsors)
+                                                                    {
+                                                                        if (item.SponsorCategoryId == SponsorCategory.SponsorCategoryId)
+                                                                        {
+                                                                            <li>
+                                                                                @if (item.RedirectUrl != null && item.RedirectUrl != "")
+                                                                                {
+                                                                                    <img src="@(imglocsponsor + item.LogoUrl)" alt="@SponsorCategory.CategoryName"> }
+                                                                                else
+                                                                                {
+                                                                                    <img src="@(imglocsponsor + item.LogoUrl)" alt="@SponsorCategory.CategoryName">}
+
+                                                                            </li>
+                                                                        }
+                                                                    }
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>}
+                                                i++;
+                                            }
+                                        </div>
+
+                                    </div>}
+                            </div>
+                            }
+                            }
+
+                    </div>}
+            </div>
+        </div>
+
+    </div> <!-- Homepage  body content section end --> <!-- footer section -->
+
+    @if (!refurl.Contains("qrcode-preview"))
+    {
+        <div class="footer-sec">
+            <div class="container">
+                <div class="footer-block">
+                    <div class="row gx-5 gy-4 ftrow justify-center">
+                        <div class="col-md-7 col-lg-5 col-sm-6 fbx">
+                            <div class="footer-content fbox1">
+                                <div class="fcal-cd">
+                                    <ul class="">
+                                        <li class="loc-fnt"><a><img class="me-2" src="Content/User/images/loc.png" alt="Company Address">@objAppInfo.CompanyAddress</a></li>
+                                                                                <li class="cal-fnt"><img class="me-2" src="Content/User/images/cal.png" alt="Company Address"><a href="tel:@objAppInfo.CompanyPhone">@objAppInfo.CompanyPhone</a></li>
+
+                                        <li class="mail-fnt"><a href="mailto:@objAppInfo.CompanyEmail" alt="Company Email"><img class="me-2" src="Content/User/images/mail.png">@objAppInfo.CompanyEmail  </a></li>
+
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 col-lg-3 col-sm-6 fbx">
+                            <div class="footer-content fbox2">
+                                @if (FooterMenuItems != null && FooterMenuItems.Count != 0)
+                                {
+                                    <ul class="foot-li">
+                                        @foreach (var item in FooterMenuItems)
+                                        {
+                                            if (this.User.Identity.IsAuthenticated && this.User.Identity.Name != null && Context.Session != null && Context.Session.GetString("ChapterName") != null)
+                                            {
+                                                if (item.DisplayName != "Membership")
+                                                {
+                                                    <li><a href="@(item.DocumentUrl != null && item.DocumentUrl != "" ? adminurl + "Content/PageDocuments/" + item.DocumentUrl : (item.OtherUrl != null && item.OtherUrl != "" ? item.OtherUrl : (item.PageUrl != null && item.PageUrl != "" ? "p/" + item.PageUrl + "?mrid=" + item.MenuItemId : Context.Session.GetString("ChapterName") + "/update-soon")))" target="@item.Target" title="@item.DisplayName">@item.DisplayName</a></li>
+                                                }
+                                                else
+                                                {
+
+
+                                                    <li><a href="@Url.Action("Profile", "Members")" target="@item.Target" title="Profile">Profile</a></li>
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                <li><a href="@(item.DocumentUrl != null && item.DocumentUrl != "" ? adminurl + "Content/PageDocuments/" + item.DocumentUrl : (item.OtherUrl != null && item.OtherUrl != "" ? item.OtherUrl : (item.PageUrl != null && item.PageUrl != "" ? "p/" + item.PageUrl + "?mrid=" + item.MenuItemId : Context.Session.GetString("ChapterName") + "/update-soon")))" target="@item.Target" title="@item.DisplayName">@item.DisplayName</a></li>
+                                            }
+                                        }
+
+                                    </ul>}
+                            </div>
+                        </div>
+                        <div class="col-md-4 col-lg-3 col-sm-6 fbx">
+                            <div class="footer-content fbox3">
+
+                                <div class="subscribe-box" style="text-align: end;">
+
+                                    <div class="news-letter d-inline-flex w-100 justify-content-md-end gap-2">
+                                        <div><img class="" src="Content/User/images/subscribe.png" alt="subscribe"></div>
+                                        <h5 class="footer-title"><span class="d-block">Subscribe for</span> Newsletter</h5>
+                                    </div>
+                                    <div class="f-btn pos-relative" style="margin-top: -7px !important;">
+                                        <a href="p/subscribe-newsletter">
+                                            <img src="Content/User/images/news.png" width="156" height="40" alt="" />
+                                        </a>
+                                    </div>
+                                    <span id="spanNEmail" style="color:#ff3737;font-family: 'Poppins-Regular';font-style: normal;font-size: 12px;text-transform: capitalize;line-height: 20px;display: inline-block; font-weight:500; padding-top:5px;"></span>
+                                </div>
+                                <h4 class="footer-title text-md-end mb-10p mt-3">Follow Us On</h4>
+                                         <div class="d-flex gap-2 justify-content-md-end footer-social">
+                                    @if (objAppInfo.FacebookUrl != null && objAppInfo.FacebookUrl != "")
+                                    {
+                                        <a href="@objAppInfo.FacebookUrl" target="_blank" title="Facebook">
+                                            <i class="bi bi-facebook" style="font-size: 20px;"></i>
+                                        </a>}
+                                    @if (objAppInfo.TwitterUrl != null && objAppInfo.TwitterUrl != "")
+                                    {
+                                        <a href="@objAppInfo.TwitterUrl" target="_blank" title="Twitter">
+                                            <i class="bi bi-twitter-x"></i>
+                                        </a>}
+                                    @if (objAppInfo.YoutubeUrl != null && objAppInfo.YoutubeUrl != "")
+                                    {
+                                        <a href="@objAppInfo.YoutubeUrl" target="_blank" title="Linkedin">
+                                            <i class="bi bi-youtube"></i>
+                                        </a>}
+                                    @if (objAppInfo.GooglePlus != null && objAppInfo.GooglePlus != "")
+                                    {
+                                        <a href="@objAppInfo.GooglePlus" target="_blank" title="Instagram">
+                                            <i class="bi bi-instagram"></i>
+                                        </a>}
+                                        @if (!string.IsNullOrEmpty(objAppInfo.InstagramUrl))
+{
+    <a href="@objAppInfo.InstagramUrl" target="_blank" title="Instagram">
+        <i class="bi bi-instagram" style="font-size:20px;"></i>
+    </a>
+}
+
+                                @if (!string.IsNullOrEmpty(objAppInfo.AppUpdate))
+{
+                                    <a href="@objAppInfo.AppUpdate" target="_blank" title="LinkedIn">
+        <i class="bi bi-linkedin" style="font-size:20px;"></i>
+    </a>
+}
+
+@if (!string.IsNullOrEmpty(objAppInfo.GooglePlusUrl))
+{
+    <a href="@objAppInfo.GooglePlusUrl" target="_blank" title="Google Plus">
+        <i class="bi bi-google" style="font-size:20px;"></i>
+    </a>
+}
+                                </div>
+                            </div>
+                        </div>
+                   
+                    </div>
+                </div>
+            </div>
+        </div> <!-- footer section end -->
+        <div class="copy-right-block rsp-m-txt-center">
+            <div class="container position-relative">
+                <div class="row align-items gx-0">
+                    <div class="col-md-7 col-lg-8">
+                        <p class="mb-0">&copy; @pcurrentYear Telugu Association Tool. All rights reserved.</p>
+                    </div>
+                    <div class="col-md-5 col-lg-4">
+                        <div class="text-lg-end text-center">
+                            <p class="mb-0p">Design &amp; Developed by <a class="aw-txt" href="https://arjunweb.com/" target="_blank">&nbsp;Arjunweb</a><img class="aw-ico ml-5p" src="Content/User/images/arjunwelogo.png" width="20px" alt="Arjun Web Solutions Pvt.Ltd"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+    }
+
+    <div class="aws-app-menu d-md-none d-block">
+        <div class="d-flex">
+            
+            @if (this.User.Identity.IsAuthenticated && this.User.Identity.Name != null && Context.Session != null && Context.Session.GetString("ChapterName") != null)
+            {
+               <a href="@Url.Action("Profile", "Members")" target="_blank">Profile</a>
+
+            }
+            else
+            {
+              
+                  <a href="@HomeUrl/become-a-member"><i class="bi bi-people"></i> <span>Member</span></a>
+            
+              
+
+            }
+
+
+
+
+
+            <a href="@HomeUrl/volunteer-registration"><i class="bi bi-person-raised-hand"></i><span> Volunteer</span></a>
+            <a href="@HomeUrl/donate-now"><i class="bi bi-currency-dollar"></i><span>Donate</span></a>
+
+
+
+            <div class="mobile-nav-toggle mobile-nav-show " role="button">  <i class=" bi bi-list "> </i>Menu</div>
+
+
+        </div>
+    </div> <!-- scripts -->
+
+    <script src="Scripts/User/owl.carousel.min.js?ver=@objAppInfo.DesktopVersion.ToString()"></script>
+    <script src="Scripts/User/easy-ticker.min.js?ver=@objAppInfo.DesktopVersion.ToString()"></script>
+    <script src="Scripts/User/external.js?ver=@objAppInfo.DesktopVersion.ToString()"></script>
+    <script src="Scripts/User/js.js?ver=@objAppInfo.DesktopVersion.ToString()"></script>
+
+    <script>
+        $(document).ready(function () {
+            $("#editProfileDetails").click(function () {
+                $("#awsEditForm").css("display", "block");
+                $("#showevents").css("display", "none");
+                $("#awsPersonalInformation").css("display", "none");
+            });
+
+        });
+
+    </script>
+    <script>
+        function togglePassword(inputId, iconElement) {
+            //  debugger;
+            var inputField = document.getElementById(inputId);
+            if (inputField.type === "password") {
+                inputField.type = "text"; // Show password
+                iconElement.classList.remove("bi-eye-slash"); // Change icon to "eye"
+                iconElement.classList.add("bi-eye");
+            } else {
+                inputField.type = "password"; // Hide password
+                iconElement.classList.remove("bi-eye"); // Change icon back to "eye-slash"
+                iconElement.classList.add("bi-eye-slash");
+            }
+        }
+        $(document).ready(function () {
+            $(window).scroll(function () {
+                if ($(document).scrollTop() > 160) {
+                    $("#header").addClass("fixed-tab");
+                } else {
+                    $("#header").removeClass("fixed-tab");
+                }
+            });
+        });
+    </script>
+
+
+</body>
+
+</html>

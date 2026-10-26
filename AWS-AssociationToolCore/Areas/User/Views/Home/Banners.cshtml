@@ -1,0 +1,71 @@
+﻿@{
+    var lstWebsiteBanners = (List<AWS_AssociationToolCore.Entities.WebsiteBanners>)ViewBag.lstWebsiteBanners;
+
+
+    int status = 0;
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+    
+  var imglocNormal = objAppInfo.BaseUrl + "Content/WebsiteBanners/NormalImages/";
+
+}
+
+<div class="banner-wrap position-relative">
+    <div class="banner-sec">
+        <div id="demo" class="carousel slide carousel-fade" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                @if (lstWebsiteBanners != null && lstWebsiteBanners.Count != 0)
+                {
+
+                    int i = 1;
+                    foreach (var item in lstWebsiteBanners)
+                    {
+
+                        <div class="carousel-item @(i == 1 ? "active" : "")">
+
+                            @if (item.RedirectUrl != null && item.RedirectUrl != "")
+                            {
+                                <div class="banner-icon-bar">
+                                          <a href="@item.RedirectUrl" target="@item.Target">
+
+                                    <img width="100px" title="@item.BannerTitle" alt="@item.BannerTitle" src="@AWS_AssociationToolCore.BLL.Common.ValidateImage((imglocNormal + item.BannerUrl), imglocNormal + "no-Newbenner2.jpg")"  class="d-block w-100" />
+                                       
+                                         </a>
+
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="banner-icon-bar">
+                                    <img width="100px" title="@item.BannerTitle" alt="@item.BannerTitle" src="@AWS_AssociationToolCore.BLL.Common.ValidateImage((imglocNormal + item.BannerUrl), imglocNormal + "no-Newbenner2.jpg")" class="d-block w-100" />
+                                       
+
+                                </div>
+
+                            }
+                        </div>
+                        i++;
+                    }
+                }
+                else
+                {
+                    <div class="banner-icon-bar">
+                        <img src="Content/WebsiteBanners/NormalImages/no-Newbenner2.jpg"
+                             alt="No Banner"
+                             class="d-block w-100">
+                    </div>
+                }
+            </div>
+            @if (lstWebsiteBanners != null && lstWebsiteBanners.Count > 1)
+            {
+                <button class="carousel-control-prev" type="button" data-bs-target="#demo" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#demo" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+            }
+            </div>
+    </div>
+</div>

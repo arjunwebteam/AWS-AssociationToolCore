@@ -1,0 +1,20 @@
+-------------------START-------------5/16/2026 12:22:48 AM
+Page :/SendMailWithFrom
+Brevo API Status: Created, Response: {"messageId":"<202605160722.23211834923@smtp-relay.mailin.fr>"}
+
+-------------------END-------------5/16/2026 12:22:48 AM
+-------------------START-------------5/16/2026 3:48:26 AM
+Page :/SendMailWithFrom
+Brevo API Status: Created, Response: {"messageId":"<202605161048.84208387662@smtp-relay.mailin.fr>"}
+
+-------------------END-------------5/16/2026 3:48:26 AM
+-------------------START-------------5/16/2026 4:23:59 AM
+Page :/SendMail
+Brevo API Status: BadRequest, Response: {"code":"missing_parameter","message":"email is missing in to"}
+
+-------------------END-------------5/16/2026 4:23:59 AM
+-------------------START-------------5/16/2026 4:24:00 AM
+Page :/SendMail
+Brevo API Status: BadRequest, Response: {"code":"missing_parameter","message":"htmlContent is missing"}
+
+-------------------END-------------5/16/2026 4:24:00 AM

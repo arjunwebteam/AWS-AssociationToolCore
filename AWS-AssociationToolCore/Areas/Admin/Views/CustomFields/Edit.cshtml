@@ -1,0 +1,301 @@
+@model AWS_AssociationToolCore.Entities.CustomFields
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+    ViewBag.Title = "Edit Custom Field";
+    List<AWS_AssociationToolCore.Entities.FormMaster> lstForms = ViewBag.Forms;
+    List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> lstFieldTypes = ViewBag.FieldTypes;
+
+    var formOptions = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(lstForms, "FormId", "FormName", Model.FormId);
+    var fieldTypeOptions = new Microsoft.AspNetCore.Mvc.Rendering.SelectList(lstFieldTypes, "Value", "Text", Model.FieldType);
+}
+
+<script>
+    $(function () {
+        ToggleFieldTypeSections();
+        $('#FieldType').on('change', ToggleFieldTypeSections);
+    });
+
+    function ToggleFieldTypeSections() {
+        var type = $('#FieldType').val();
+        var choiceTypes = ['Dropdown', 'Radio', 'Checkbox', 'MultiSelect'];
+        var numericTypes = ['Number'];
+        var textTypes = ['Textbox', 'Textarea', 'Email', 'Phone'];
+
+        $('#sectionChoiceHint').toggle(choiceTypes.indexOf(type) !== -1);
+        $('#sectionMinMaxValue').toggle(numericTypes.indexOf(type) !== -1);
+        $('#sectionMinMaxLength').toggle(textTypes.indexOf(type) !== -1);
+        $('#sectionFile').toggle(type === 'File');
+        $('#sectionMultiSelectHint').toggle(type === 'MultiSelect');
+    }
+</script>
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">Edit Custom Field</h5></div>
+    <div class="card-body">
+       
+
+    @using (Html.BeginForm("Edit", "CustomFields", FormMethod.Post, new { @id = "frmCustomField", @name = "frmCustomField", @novalidate = "novalidate" }))
+    {
+
+
+            @Html.HiddenFor(m => m.CustomFieldId)
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Form <span class="text-danger">*</span></label>
+                    @Html.DropDownList("FormId", formOptions, "-- Select Form --", new { @class = "form-select", required = "required" })
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Field Type <span class="text-danger">*</span></label>
+                    @Html.DropDownList("FieldType", fieldTypeOptions, "-- Select Type --", new { @class = "form-select", id = "FieldType", required = "required" })
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Display Order</label>
+                    @Html.TextBoxFor(m => m.DisplayOrder, new { type = "number", @class = "form-control" })
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Field Label <span class="text-danger">*</span></label>
+                    @Html.TextBoxFor(m => m.FieldLabel, new { @class = "form-control", required = "required", placeholder = "e.g. Seva Type" })
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Field Name / Unique Key <span class="text-danger">*</span></label>
+                    @Html.TextBoxFor(m => m.FieldName, new { @class = "form-control", required = "required", placeholder = "e.g. SevaType" })
+                    <small class="text-muted">Letters, numbers and underscores only. Must be unique within the selected form.</small>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Placeholder</label>
+                    @Html.TextBoxFor(m => m.Placeholder, new { @class = "form-control" })
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Default Value</label>
+                    @Html.TextBoxFor(m => m.DefaultValue, new { @class = "form-control" })
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">Help Text</label>
+                    @Html.TextBoxFor(m => m.HelpText, new { @class = "form-control" })
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Validation Pattern (Regex, optional)</label>
+                    @Html.TextBoxFor(m => m.ValidationPattern, new { @class = "form-control" })
+                </div>
+
+
+                <div class="col-md-4">
+                    <div class="form-check form-switch pt-4">
+                        @Html.CheckBoxFor(m => m.IsRequired, new { @class = "form-check-input" })
+                        <label class="form-check-label">Required</label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check form-switch pt-4">
+                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                        <label class="form-check-label">Active</label>
+                    </div>
+                </div>
+
+                <div id="sectionMinMaxLength" class="col-md-12 row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Min Length</label>
+                        @Html.TextBoxFor(m => m.MinLength, new { type = "number", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Max Length</label>
+                        @Html.TextBoxFor(m => m.MaxLength, new { type = "number", @class = "form-control" })
+                    </div>
+                </div>
+
+                <div id="sectionMinMaxValue" class="col-md-12 row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Min Value</label>
+                        @Html.TextBoxFor(m => m.MinValue, new { type = "number", step = "any", @class = "form-control" })
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Max Value</label>
+                        @Html.TextBoxFor(m => m.MaxValue, new { type = "number", step = "any", @class = "form-control" })
+                    </div>
+                </div>
+
+                <div id="sectionFile" class="col-md-12 row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Allowed File Types</label>
+                        @Html.TextBoxFor(m => m.AllowedFileTypes, new { @class = "form-control", placeholder = ".jpg,.png,.pdf" })
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Max File Size (KB)</label>
+                        @Html.TextBoxFor(m => m.MaxFileSizeKB, new { type = "number", @class = "form-control" })
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check form-switch pt-4">
+                            @Html.CheckBoxFor(m => m.AllowMultiple, new { @class = "form-check-input" })
+                            <label class="form-check-label">Allow Multiple Files</label>
+                        </div>
+                    </div>
+                </div>
+
+               
+
+                <div id="sectionChoiceHint" class="col-md-12">
+                    <div class="alert alert-info mb-0">
+                        Save this field first, then use <strong>Manage Options</strong> from the list to add Dropdown / Radio / Checkbox / Multi-select options.
+                    </div>
+                </div>
+                <div id="sectionMultiSelectHint" class="col-md-12" style="display:none">
+                    <small class="text-muted">Multi-select fields automatically allow more than one option to be chosen.</small>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Save</button>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Index")">Cancel</a>
+            </div>
+        }
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+
+        // ---- Custom validation methods -----------------------------------
+
+        $.validator.addMethod("no_digits", function (value, element) {
+            return !/\d/.test(value);
+        }, "Please enter a valid value without digits");
+
+        $.validator.addMethod("noSpecialChars", function (value, element) {
+            let trimmedValue = $.trim(value);
+            let hasSpecialChars = /[^a-zA-Z0-9\s]/.test(trimmedValue);
+            return !hasSpecialChars;
+        }, "Special characters are not allowed.");
+
+        // FieldName is used as the unique key / DB column reference, so it's
+        // restricted to letters, numbers and underscores only, and must not
+        // start with a digit.
+        $.validator.addMethod("validFieldName", function (value, element) {
+            return this.optional(element) || /^[A-Za-z_][A-Za-z0-9_]*$/.test(value);
+        }, "Only letters, numbers and underscores are allowed, and it must not start with a number.");
+
+        // Cross-field: MaxLength must be >= MinLength when both are provided.
+        $.validator.addMethod("gteMinLength", function (value, element) {
+            var min = $('#MinLength').val();
+            if (value === '' || min === '') { return true; }
+            return parseFloat(value) >= parseFloat(min);
+        }, "Max Length must be greater than or equal to Min Length.");
+
+        // Cross-field: MaxValue must be >= MinValue when both are provided.
+        $.validator.addMethod("gteMinValue", function (value, element) {
+            var min = $('#MinValue').val();
+            if (value === '' || min === '') { return true; }
+            return parseFloat(value) >= parseFloat(min);
+        }, "Max Value must be greater than or equal to Min Value.");
+
+        $("#frmCustomField").validate({
+            rules: {
+                FormId: {
+                    required: true
+                },
+                FieldType: {
+                    required: true
+                },
+                FieldLabel: {
+                    required: true,
+                    noSpecialChars: true
+                },
+                FieldName: {
+                    required: true,
+                    validFieldName: true
+                },
+                DisplayOrder: {
+                    number: true
+                },
+                MinLength: {
+                    number: true,
+                    min: 0
+                },
+                MaxLength: {
+                    number: true,
+                    min: 0,
+                    gteMinLength: true
+                },
+                MinValue: {
+                    number: true
+                },
+                MaxValue: {
+                    number: true,
+                    gteMinValue: true
+                },
+                MaxFileSizeKB: {
+                    number: true,
+                    min: 0
+                }
+            },
+            messages: {
+                FormId: {
+                    required: "Please select a form"
+                },
+                FieldType: {
+                    required: "Please select a field type"
+                },
+                FieldLabel: {
+                    required: "Please enter a field label",
+                    noSpecialChars: "Special characters are not allowed in Field Label"
+                },
+                FieldName: {
+                    required: "Please enter a field name / unique key",
+                    validFieldName: "Only letters, numbers and underscores are allowed, and it must not start with a number."
+                },
+                DisplayOrder: {
+                    number: "Please enter a valid number"
+                },
+                MinLength: {
+                    number: "Please enter a valid number",
+                    min: "Min Length cannot be negative"
+                },
+                MaxLength: {
+                    number: "Please enter a valid number",
+                    min: "Max Length cannot be negative"
+                },
+                MinValue: {
+                    number: "Please enter a valid number"
+                },
+                MaxValue: {
+                    number: "Please enter a valid number"
+                },
+                MaxFileSizeKB: {
+                    number: "Please enter a valid number",
+                    min: "Max File Size cannot be negative"
+                }
+            },
+
+            submitHandler: function (form) {
+                form.submit();
+            },
+
+            errorElement: "div",
+            errorPlacement: function (error, element) {
+                error.addClass("invalid-feedback");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.closest(".form-check"));
+                } else {
+                    error.insertAfter(element);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                var $element = $(element);
+                if ($element.is('input, textarea, select')) {
+                    $element.addClass("is-invalid").removeClass("is-valid");
+                }
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                var $element = $(element);
+                if ($element.is('input, textarea, select')) {
+                    $element.addClass("is-valid").removeClass("is-invalid");
+                }
+            },
+
+        });
+
+    });
+</script>

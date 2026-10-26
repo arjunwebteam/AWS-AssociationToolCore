@@ -1,0 +1,296 @@
+@model AWS_AssociationToolCore.Entities.CustomFields
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+    ViewBag.Title = "Manage Options - " + Model.FieldLabel;
+}
+
+@* <script>
+    var customFieldId = @Model.CustomFieldId;
+
+    function AddOption() {
+        var data = {
+            OptionId: 0,
+            CustomFieldId: customFieldId,
+            OptionText: $('#txtOptionText').val(),
+            OptionValue: $('#txtOptionValue').val() || $('#txtOptionText').val(),
+            DisplayOrder: $('#tblOptions tr').length,
+            IsActive: true
+        };
+        if (!data.OptionText) { alert('Option Text is required.'); return; }
+
+        $.post('@Url.Action("SaveOptions")', data, function (result) {
+            if (result.ok) {
+                RenderOptions(result.options);
+                $('#txtOptionText').val('');
+                $('#txtOptionValue').val('');
+            } else {
+                alert(result.message);
+            }
+        });
+    }
+
+    function EditOption(optionId, optionText, optionValue) {
+        var newText = prompt('Option Text', optionText);
+        if (newText === null) return;
+        var newValue = prompt('Option Value', optionValue);
+        if (newValue === null) return;
+
+        $.post('@Url.Action("SaveOptions")', {
+            OptionId: optionId, CustomFieldId: customFieldId,
+            OptionText: newText, OptionValue: newValue,
+            DisplayOrder: 0, IsActive: true
+        }, function (result) {
+            if (result.ok) RenderOptions(result.options);
+            else alert(result.message);
+        });
+    }
+
+    function DeleteOption(optionId) {
+        if (!confirm('Delete this option?')) return;
+        $.post('@Url.Action("DeleteOption")', { optionId: optionId, customFieldId: customFieldId }, function (result) {
+            if (result.ok) RenderOptions(result.options);
+            else alert(result.message);
+        });
+    }
+
+    function ToggleOptionStatus(optionId, isActive) {
+        $.post('@Url.Action("UpdateOptionStatus")', { optionId: optionId, isActive: isActive });
+    }
+
+    function MoveOption(optionId, direction) {
+        // direction: -1 up, +1 down — recompute order client-side then persist
+        var rows = $('#tblOptions tr').toArray();
+        var idx = rows.findIndex(r => $(r).data('id') == optionId);
+        var swapIdx = idx + direction;
+        if (swapIdx < 0 || swapIdx >= rows.length) return;
+
+        var tbody = $('#tblOptions');
+        if (direction < 0) $(rows[swapIdx]).before(rows[idx]);
+        else $(rows[swapIdx]).after(rows[idx]);
+
+        $('#tblOptions tr').each(function (i) {
+            var id = $(this).data('id');
+            $.post('@Url.Action("UpdateOptionOrder")', { optionId: id, displayOrder: i });
+        });
+    }
+
+    function RenderOptions(options) {
+        var html = '';
+        options.forEach(function (o, i) {
+            html += '<tr data-id="' + o.optionId + '">' +
+                '<td>' + o.optionText + '</td>' +
+                '<td>' + o.optionValue + '</td>' +
+                '<td style="text-align:center">' +
+                '  <button class="btn btn-sm btn-outline-secondary" onclick="MoveOption(' + o.optionId + ',-1)"><i class="bi bi-arrow-up"></i></button> ' +
+                '  <button class="btn btn-sm btn-outline-secondary" onclick="MoveOption(' + o.optionId + ',1)"><i class="bi bi-arrow-down"></i></button>' +
+                '</td>' +
+                '<td style="text-align:center">' +
+                '  <label class="switch"><input type="checkbox" onclick="ToggleOptionStatus(' + o.optionId + ', this.checked)" ' + (o.isActive ? 'checked' : '') + '><span class="slider"></span></label>' +
+                '</td>' +
+                '<td style="text-align:center">' +
+                '  <a class="text-warning cursor-pointer me-2" onclick="EditOption(' + o.optionId + ', ' + JSON.stringify(o.optionText) + ', ' + JSON.stringify(o.optionValue) + ')"><i class="bi bi-pencil-fill"></i></a>' +
+                '  <a class="text-danger cursor-pointer" onclick="DeleteOption(' + o.optionId + ')"><i class="bi bi-trash-fill"></i></a>' +
+                '</td>' +
+                '</tr>';
+        });
+        $('#tblOptions').html(html || '<tr><td colspan="5" class="text-center">No options yet.</td></tr>');
+    }
+</script>
+ *@
+
+
+
+<script>
+    var customFieldId = @Model.CustomFieldId;
+
+    function AddOption() {
+        var data = {
+            OptionId: 0,
+            CustomFieldId: customFieldId,
+            OptionText: $('#txtOptionText').val(),
+            OptionValue: $('#txtOptionValue').val() || $('#txtOptionText').val(),
+            DisplayOrder: $('#tblOptions tr').length,
+            IsActive: true
+        };
+        if (!data.OptionText) {
+            showLobiboxNotification('error', 'Option Text is required.');
+            return;
+        }
+
+        $.post('@Url.Action("SaveOptions")', data, function (result) {
+            showLobiboxNotification(result.ok ? 'success' : 'error', result.message);
+            if (result.ok) {
+                RenderOptions(result.options);
+                $('#txtOptionText').val('');
+                $('#txtOptionValue').val('');
+            }
+        }).fail(function (xhr, status, error) {
+            console.error('AddOption failed:', xhr.status, xhr.responseText);
+            showLobiboxNotification('error', 'Failed to add option.');
+        });
+    }
+
+    function EditOption(optionId, optionText, optionValue) {
+        var newText = prompt('Option Text', optionText);
+        if (newText === null) return;
+        var newValue = prompt('Option Value', optionValue);
+        if (newValue === null) return;
+
+        $.post('@Url.Action("SaveOptions")', {
+            OptionId: optionId, CustomFieldId: customFieldId,
+            OptionText: newText, OptionValue: newValue,
+            DisplayOrder: 0, IsActive: true
+        }, function (result) {
+            showLobiboxNotification(result.ok ? 'success' : 'error', result.message);
+            if (result.ok) RenderOptions(result.options);
+        }).fail(function (xhr, status, error) {
+            console.error('EditOption failed:', xhr.status, xhr.responseText);
+            showLobiboxNotification('error', 'Failed to update option.');
+        });
+    }
+
+    function DeleteOption(optionId) {
+        if (!confirm('Delete this option?')) return;
+        $.post('@Url.Action("DeleteOption")', { optionId: optionId, customFieldId: customFieldId }, function (result) {
+            showLobiboxNotification(result.ok ? 'success' : 'error', result.message);
+            if (result.ok) RenderOptions(result.options);
+        }).fail(function (xhr, status, error) {
+            console.error('DeleteOption failed:', xhr.status, xhr.responseText);
+            showLobiboxNotification('error', 'Failed to delete option.');
+        });
+    }
+
+    function ToggleOptionStatus(optionId, isActive) {
+        $.post('@Url.Action("UpdateOptionStatus")', { optionId: optionId, isActive: isActive }, function (result) {
+            showLobiboxNotification(result.ok ? 'success' : 'error', result.message);
+        }).fail(function (xhr, status, error) {
+            console.error('ToggleOptionStatus failed:', xhr.status, xhr.responseText);
+            showLobiboxNotification('error', 'Failed to update status.');
+        });
+    }
+
+    function MoveOption(optionId, direction) {
+        // direction: -1 up, +1 down — recompute order client-side then persist
+        var rows = $('#tblOptions tr').toArray();
+        var idx = rows.findIndex(r => $(r).data('id') == optionId);
+        var swapIdx = idx + direction;
+        if (swapIdx < 0 || swapIdx >= rows.length) return;
+
+        if (direction < 0) $(rows[swapIdx]).before(rows[idx]);
+        else $(rows[swapIdx]).after(rows[idx]);
+
+        var requests = $('#tblOptions tr').map(function (i) {
+            var id = $(this).data('id');
+            return $.post('@Url.Action("UpdateOptionOrder")', { optionId: id, displayOrder: i });
+        }).get();
+
+        $.when.apply($, requests).done(function () {
+            showLobiboxNotification('success', 'Order updated.');
+        }).fail(function (xhr, status, error) {
+            console.error('MoveOption failed:', xhr && xhr.status, xhr && xhr.responseText);
+            showLobiboxNotification('error', 'Failed to update order.');
+        });
+    }
+
+   
+
+
+        function RenderOptions(options) {
+        var html = '';
+        options.forEach(function (o, i) {
+            html += '<tr data-id="' + o.optionId + '">' +
+                '<td>' + o.optionText + '</td>' +
+                '<td>' + o.optionValue + '</td>' +
+                '<td style="text-align:center">' +
+                '  <button class="btn btn-sm btn-outline-secondary" onclick="MoveOption(' + o.optionId + ',-1)"><i class="bi bi-arrow-up"></i></button> ' +
+                '  <button class="btn btn-sm btn-outline-secondary" onclick="MoveOption(' + o.optionId + ',1)"><i class="bi bi-arrow-down"></i></button>' +
+                '</td>' +
+                '<td style="text-align:center">' +
+                '  <label class="switch"><input type="checkbox" onclick="ToggleOptionStatus(' + o.optionId + ', this.checked)" ' + (o.isActive ? 'checked' : '') + '><span class="slider"></span></label>' +
+                '</td>' +
+                '<td style="text-align:center">' +
+                '  <a class="text-warning cursor-pointer me-2" onclick=\'EditOption(' + o.optionId + ', ' + jsonAttr(o.optionText) + ', ' + jsonAttr(o.optionValue) + ')\'><i class="bi bi-pencil-fill"></i></a>' +
+                '  <a class="text-danger cursor-pointer" onclick="DeleteOption(' + o.optionId + ')"><i class="bi bi-trash-fill"></i></a>' +
+                '</td>' +
+                '</tr>';
+        });
+        $('#tblOptions').html(html || '<tr><td colspan="5" class="text-center">No options yet.</td></tr>');
+    }
+
+
+        
+    
+    function jsonAttr(value) {
+        // Encode a JS value for safe embedding inside a single-quoted HTML attribute
+        return JSON.stringify(value).replace(/'/g, '&#39;');
+    }
+
+
+
+
+</script>
+
+
+
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Manage Options — @Model.FieldLabel <small class="text-muted">(@Model.FieldType)</small></h5>
+        <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", new { formId = Model.FormId })">Back</a>
+    </div>
+    <div class="card-body">
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <input id="txtOptionText" class="form-control" placeholder="Option Text (e.g. General Seva)" />
+            </div>
+            <div class="col-md-4">
+                <input id="txtOptionValue" class="form-control" placeholder="Option Value (defaults to Option Text)" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" onclick="AddOption()"><i class="bi bi-plus-lg"></i> Add</button>
+            </div>
+        </div>
+
+        <table class="table table-striped align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Option Text</th>
+                    <th>Option Value</th>
+                    <th style="text-align:center">Order</th>
+                    <th style="text-align:center">Active</th>
+                    <th style="text-align:center">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tblOptions">
+                @if (Model.Options != null && Model.Options.Count > 0)
+                {
+                    foreach (var o in Model.Options.OrderBy(x => x.DisplayOrder))
+                    {
+                        <tr data-id="@o.OptionId">
+                            <td>@o.OptionText</td>
+                            <td>@o.OptionValue</td>
+                            <td style="text-align:center">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="MoveOption(@o.OptionId,-1)"><i class="bi bi-arrow-up"></i></button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="MoveOption(@o.OptionId,1)"><i class="bi bi-arrow-down"></i></button>
+                            </td>
+                            <td style="text-align:center">
+                                <label class="switch">
+                                    <input type="checkbox" onclick="ToggleOptionStatus(@o.OptionId, this.checked)" checked="@(o.IsActive ? "checked" : null)">
+                                    <span class="slider"></span>
+                                </label>
+                            </td>
+                            <td style="text-align:center">
+                                <a class="text-warning cursor-pointer me-2" onclick='EditOption(@o.OptionId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(o.OptionText)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(o.OptionValue)))'><i class="bi bi-pencil-fill"></i></a>
+                                <a class="text-danger cursor-pointer" onclick="DeleteOption(@o.OptionId)"><i class="bi bi-trash-fill"></i></a>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="5" class="text-center">No options yet.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

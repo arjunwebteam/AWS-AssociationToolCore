@@ -1,0 +1,1488 @@
+﻿@using Microsoft.AspNetCore.Http.Extensions
+@using Microsoft.AspNetCore.Http
+@{
+    int status = 0;
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+
+    var location = System.Configuration.ConfigurationManager.AppSettings["adminimgurl"] + "MemberProfileImages/";
+
+    AWS_AssociationToolCore.Entities.EventRegTickets objEventRegTickets = ViewBag.objEventRegTickets;
+
+    var imglocNormal = System.Configuration.ConfigurationManager.AppSettings["adminimgurl"] + "Content/CulturalEvent/";
+
+    var type = ViewBag.type;
+    var uid = ViewBag.uid;
+    var MembershipType = ViewBag.MembershipType;
+
+    // ------------------------------------------------------------------
+    // EVENT DETAILS (Name / Date / Time / Location) - read from objEventRegTickets
+    // Pick() tries each property name in order and returns the first one that
+    // exists on the object and has a value (so the page never breaks if a name differs).
+    // >>> If your entity uses other property names, just add them to the lists below. <<<
+    // ------------------------------------------------------------------
+    object Pick(object src, params string[] names)
+    {
+        if (src == null) return null;
+        foreach (var n in names)
+        {
+            var p = src.GetType().GetProperty(n);
+            if (p != null)
+            {
+                var v = p.GetValue(src);
+                if (v != null && v.ToString() != "") return v;
+            }
+        }
+        return null;
+    }
+
+    string Fmt(object v, string format)
+    {
+        if (v == null) return "";
+        if (v is DateTime d) return d.ToString(format);
+        return v.ToString();
+    }
+
+
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Individual Ticket Check-in - @objAppInfo.SiteName</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* =========================================================
+                   INDIVIDUAL TICKET CHECK-IN  -  EVENT CARD DESIGN
+                   ========================================================= */
+        :root {
+            --maroon: #800020;
+            --red: #c81515;
+            --red-dark: #a11212;
+            --title: #b4102a;
+            --ink: #1f2328;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --pink: #fdf3f4;
+            --pink-line: #f3d6da;
+            --page: #f3efef;
+            --green-bg: #e7f6ec;
+            --green-tx: #17663a;
+            --amber-bg: #fff4e0;
+            --amber-tx: #b45309;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: 'Poppins', 'Segoe UI', Tahoma, Arial, sans-serif;
+            background: var(--page);
+            color: var(--ink);
+            min-height: 100vh;
+            padding: 24px 12px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(60, 20, 20, .10);
+            overflow: hidden;
+        }
+
+        /* ---------- Header ---------- */
+        .header {
+            position: relative;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            grid-template-areas: "logo title actions";
+            align-items: center;
+            gap: 16px;
+            padding: 18px 24px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--maroon) 0%, var(--red) 100%);
+            overflow: hidden;
+        }
+
+            .header::before {
+                content: '';
+                position: absolute;
+                right: -60px;
+                top: -80px;
+                width: 240px;
+                height: 240px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, .07);
+                pointer-events: none;
+            }
+
+        .header-logo {
+            grid-area: logo;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .logo-container {
+            flex-shrink: 0;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.18);
+        }
+
+            .logo-container img {
+                width: 34px !important;
+                height: 34px;
+                object-fit: contain;
+            }
+
+        .header-content {
+            grid-area: title;
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            min-width: 0;
+        }
+
+        .ticket-badge {
+            display: inline-block;
+            margin-bottom: 4px;
+            padding: 2px 14px;
+            font-size: .7rem;
+            font-weight: 500;
+            letter-spacing: .4px;
+            background: rgba(255,255,255,.18);
+            border: 1px solid rgba(255,255,255,.35);
+            border-radius: 20px;
+        }
+
+        .header h1 {
+            font-size: 1.45rem;
+            font-weight: 600;
+            line-height: 1.25;
+            margin: 0 0 2px;
+        }
+
+        .header p {
+            font-size: .8rem;
+            font-weight: 300;
+            opacity: .92;
+        }
+
+        .header-actions {
+            grid-area: actions;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .login-btn {
+            font-family: inherit;
+            padding: 9px 26px;
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--maroon);
+            background: #fff;
+            border: 0;
+            border-radius: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,.18);
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+            .login-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0,0,0,.25);
+            }
+
+        /* ---------- Content ---------- */
+        .content {
+            padding: 22px 24px 26px;
+            background: #fff;
+        }
+
+        /* ---------- Page title (centered) ---------- */
+        .ed-page-title {
+            margin: 0 0 18px;
+            text-align: center;
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--title);
+            line-height: 1.3;
+        }
+
+        /* ---------- Generic pink card ---------- */
+        .ed-card {
+            margin-bottom: 16px;
+            background: #fff;
+            border: 1px solid var(--pink-line);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .ed-card-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 16px;
+            font-size: .95rem;
+            font-weight: 600;
+            color: var(--title);
+            background: var(--pink);
+            border-bottom: 1px solid var(--pink-line);
+        }
+
+            .ed-card-head svg {
+                width: 18px;
+                height: 18px;
+                flex-shrink: 0;
+            }
+
+        .ed-card-body {
+            padding: 16px;
+        }
+
+        /* ---------- Icon box ---------- */
+        .ed-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--red);
+            background: #fff;
+            border: 1px solid var(--pink-line);
+            border-radius: 9px;
+        }
+
+            .ed-icon svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            .ed-icon.sm {
+                width: 34px;
+                height: 34px;
+                border-radius: 8px;
+            }
+
+                .ed-icon.sm svg {
+                    width: 18px;
+                    height: 18px;
+                }
+
+        /* ---------- Event name card ---------- */
+        .ed-name {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+            padding: 14px 16px;
+            background: var(--pink);
+            border: 1px solid var(--pink-line);
+            border-radius: 12px;
+        }
+
+        .ed-label {
+            display: block;
+            font-size: .74rem;
+            font-weight: 400;
+            color: #800020;
+            line-height: 1.3;
+            font-family: 'Poppins';
+        }
+
+        .ed-event-title {
+            display: block;
+            margin-top: 2px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--title);
+            line-height: 1.3;
+            word-break: break-word;
+        }
+
+        /* ---------- Date + Location card ---------- */
+        .ed-meta {
+       
+            grid-template-columns: 1fr 1fr;
+            margin-bottom: 16px;
+            background: var(--pink);
+            border: 1px solid var(--pink-line);
+            border-radius: 12px;
+        }
+
+        .ed-meta-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 14px;
+            min-width: 0;
+        }
+
+            .ed-meta-item + .ed-meta-item {
+                border-left: 1px solid var(--pink-line);
+            }
+
+        .ed-meta-text {
+            min-width: 0;
+        }
+
+        .ed-meta-value {
+            display: block;
+            margin-top: 1px;
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--ink);
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .ed-meta-sub {
+            display: block;
+            margin-top: 2px;
+            font-size: .72rem;
+            color: var(--muted);
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        /* ---------- Field grid (registrant / ticket / status) ---------- */
+        .ed-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 18px;
+        }
+
+        .ed-field {
+            min-width: 0;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f1f1;
+        }
+
+            .ed-field.full {
+                grid-column: 1 / -1;
+            }
+
+        .ed-value {
+            display: block;
+            margin-top: 1px;
+            font-size: .92rem;
+            font-weight: 600;
+            color: var(--ink);
+            line-height: 1.4;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+            .ed-value.normal {
+                font-weight: 400;
+            }
+
+        .ed-grid .ed-field:nth-last-child(-n+2):not(.full):nth-child(odd),
+        .ed-grid .ed-field:last-child {
+            border-bottom: 0;
+        }
+
+        /* ---------- Ticket number + status ---------- */
+        .ticket-header {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: center;
+            gap: 10px 14px;
+            padding-bottom: 14px;
+            margin-bottom: 4px;
+            border-bottom: 1px dashed #dcc3c8;
+        }
+
+        .ticket-label {
+            font-size: .85rem;
+            font-weight: 500;
+            color: var(--muted);
+        }
+
+        .ticket-id-display {
+            justify-self: start;
+            font-family: 'Courier New', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            color: var(--red);
+            background: #fff;
+            padding: 6px 16px;
+            border: 2px solid var(--red);
+            border-radius: 8px;
+        }
+
+        .ticket-status-large {
+            justify-self: start;
+            padding: 6px 20px;
+            font-size: .85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            border-radius: 24px;
+        }
+
+        .status-checked-in {
+            background: var(--green-bg);
+            color: var(--green-tx);
+        }
+
+        .status-pending {
+            background: var(--amber-bg);
+            color: var(--amber-tx);
+        }
+
+        /* ---------- Forms ---------- */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: .9rem;
+            font-weight: 500;
+        }
+
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 12px 14px;
+            font-family: inherit;
+            font-size: .95rem;
+            color: var(--ink);
+            background: #fff;
+            border: 1px solid #cfd4da;
+            border-radius: 8px;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+            .form-select:focus,
+            .form-textarea:focus {
+                outline: none;
+                border-color: var(--red);
+                box-shadow: 0 0 0 3px rgba(200,21,21,.12);
+            }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 34px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background .2s ease, box-shadow .2s ease, transform .2s ease;
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: var(--maroon);
+            box-shadow: 0 3px 10px rgba(128,0,32,.25);
+        }
+
+            .btn-primary:hover {
+                background: var(--red-dark);
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(128,0,32,.32);
+            }
+
+        .btn-secondary {
+            color: #fff;
+            background: #6b7280;
+        }
+
+        .btn-success {
+            color: #fff;
+            background: #1a7f4b;
+        }
+
+        /* ---------- Alerts / notes ---------- */
+        .alert {
+            padding: 14px 18px;
+            margin-bottom: 18px;
+            font-weight: 500;
+            border-radius: 8px;
+        }
+
+        .alert-success {
+            background: var(--green-bg);
+            color: var(--green-tx);
+            border: 1px solid #b7e3c6;
+        }
+
+        .alert-warning {
+            background: var(--amber-bg);
+            color: var(--amber-tx);
+            border: 1px solid #f6d9a3;
+        }
+
+        .login-note {
+            margin-top: 16px;
+            padding: 14px 16px;
+            font-size: .9rem;
+            background: var(--pink);
+            border: 1px dashed #d9b3bb;
+            border-radius: 10px;
+        }
+
+        .login-link {
+            display: inline-block;
+            margin: 0 2px;
+            padding: 3px 14px;
+            font-weight: 600;
+            color: #fff !important;
+            background: var(--maroon);
+            border-radius: 6px;
+            text-decoration: none;
+            transition: background .2s ease;
+        }
+
+            .login-link:hover {
+                background: var(--red-dark);
+            }
+
+        .form-section .event-details h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--green-tx);
+        }
+
+        /* ---------- History (hidden by default) ---------- */
+        .checkin-history {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+            .history-item:last-child {
+                border-bottom: none;
+            }
+
+        .history-action {
+            font-weight: 600;
+        }
+
+        .history-time {
+            font-size: .88rem;
+            color: var(--muted);
+        }
+
+        /* ---------- Login modal ---------- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            inset: 0;
+            background: rgba(20, 10, 10, .55);
+        }
+
+            .modal.show {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+        .modal-content {
+            width: 92%;
+            max-width: 400px;
+            margin: 20px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(0,0,0,.3);
+            overflow: hidden;
+            animation: modalSlideIn .25s ease;
+        }
+
+        @@keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            position: relative;
+            padding: 18px 50px 18px 20px;
+            color: #fff;
+            text-align: center;
+            background: linear-gradient(135deg, var(--maroon), var(--red));
+        }
+
+            .modal-header h2 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+
+        .close {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            line-height: 1;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background .2s ease;
+        }
+
+            .close:hover {
+                background: rgba(255,255,255,.22);
+            }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .login-form-group {
+            margin-bottom: 18px;
+        }
+
+        .login-form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: .88rem;
+            font-weight: 500;
+        }
+
+        .login-form-input {
+            width: 100%;
+            padding: 11px 14px;
+            font-family: inherit;
+            font-size: .95rem;
+            background: #fff;
+            border: 1px solid #cfd4da;
+            border-radius: 8px;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+            .login-form-input:focus {
+                outline: none;
+                border-color: var(--red);
+                box-shadow: 0 0 0 3px rgba(200,21,21,.12);
+            }
+
+        .login-submit-btn {
+            width: 100%;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #fff;
+            background: var(--maroon);
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background .2s ease;
+        }
+
+            .login-submit-btn:hover {
+                background: var(--red-dark);
+            }
+
+        /* =========================================================
+                   TABLET
+                   ========================================================= */
+        @@media (max-width: 768px) {
+            body {
+                padding: 12px 8px;
+            }
+
+            .header {
+                padding: 16px 18px;
+            }
+
+                .header h1 {
+                    font-size: 1.3rem;
+                }
+
+            .content {
+                padding: 18px 16px 22px;
+            }
+        }
+
+        /* =========================================================
+                   MOBILE
+                   ========================================================= */
+        @@media (max-width: 576px) {
+            body {
+                padding: 0;
+                background: #fff;
+            }
+
+            .container {
+                border: 0;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .header {
+                grid-template-columns: 1fr auto;
+                grid-template-areas: "logo actions" "title title";
+                gap: 12px 10px;
+                padding: 14px 16px 16px;
+            }
+
+            .logo-container {
+                width: 44px;
+                height: 44px;
+            }
+
+                .logo-container img {
+                    width: 30px !important;
+                    height: 30px;
+                }
+
+            .header-content {
+                padding-top: 10px;
+                border-top: 1px solid rgba(255,255,255,.25);
+            }
+
+            .header h1 {
+                font-size: 1.25rem;
+            }
+
+            .header p {
+                font-size: .75rem;
+            }
+
+            .login-btn {
+                padding: 8px 22px;
+                font-size: .85rem;
+            }
+
+            .content {
+                padding: 16px 14px 24px;
+            }
+
+            .ed-page-title {
+                font-size: 1.2rem;
+                margin-bottom: 14px;
+            }
+
+            .ed-name {
+                padding: 12px 14px;
+                gap: 12px;
+            }
+
+            .ed-event-title {
+                font-size: 1.05rem;
+            }
+
+            .ed-meta-item {
+                padding: 12px 10px;
+                gap: 8px;
+            }
+
+            .ed-meta-value {
+                font-size: .85rem;
+            }
+
+            .ed-card-body {
+                padding: 12px 14px;
+            }
+
+            .ed-grid {
+                gap: 0 14px;
+            }
+            /* ticket number / status stacked + centered */
+            .ticket-header {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                text-align: center;
+                gap: 6px;
+            }
+
+                .ticket-header .ticket-label:nth-of-type(2) {
+                    margin-top: 8px;
+                }
+
+            .ticket-id-display {
+                justify-self: center;
+                width: 100%;
+                text-align: center;
+                font-size: 1.15rem;
+            }
+
+            .ticket-status-large {
+                justify-self: center;
+                min-width: 150px;
+                text-align: center;
+            }
+            /* check-in form: full width dropdown */
+            .ed-card form > div[style*="grid"] {
+                grid-template-columns: 1fr !important;
+                gap: 0 !important;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                padding: 12px 20px;
+            }
+
+            .login-note {
+                padding: 14px;
+                text-align: center;
+            }
+
+            .login-link {
+                display: block;
+                margin: 12px 0 4px;
+                padding: 11px 16px;
+                font-size: 1rem;
+            }
+        }
+
+        #divmessage1 {
+            margin: 0;
+            padding: 0;
+        }
+
+            #divmessage1 .error1 {
+                display: block;
+                max-width: 100%;
+                margin: 16px auto; /* పైన కింద గ్యాప్, మధ్యలో సెంటర్ */
+                padding: 12px 16px; /* లోపల స్పేస్ */
+                background-color: #fdecea; /* లైట్ రెడ్ బ్యాక్‌గ్రౌండ్ */
+                border: 1px solid #f5c2c0;
+                border-left: 4px solid #d93025;
+                border-radius: 6px;
+                color: #d93025;
+                text-align: center; /* టెక్స్ట్ సెంటర్ */
+                font-size: 15px;
+                font-weight: 500;
+                line-height: 1.4;
+            }
+        /* very small phones: stack date & location */
+        @@media (max-width: 360px) {
+            .ed-meta {
+                grid-template-columns: 1fr;
+            }
+
+            .ed-meta-item + .ed-meta-item {
+                border-left: 0;
+                border-top: 1px solid var(--pink-line);
+            }
+
+            .ed-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            if ('@ViewBag.strcul' == 'login-failed') {
+                CulLoginShow();
+                $('#ErrorMessageCul').show();
+            }
+            $('#newsshow').hide();
+            $('#hideleft').hide();
+
+        });
+
+        function CulLoginShow() {
+            $('#EmailC1').val('').removeClass('validate');
+            $('#PasswordC1').val('').removeClass('validate');
+            $('#ErrorMessageCul').hide();
+            $('#cullogin').dialog('open');
+        }
+
+    </script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            Common.mfadeout();
+
+        });
+
+        function CulLoginValidate() {
+            if ($('#EmailC1').val() == "") { $('#EmailC1').focus().addClass("validate"); return false; } else { $('#EmailC1').removeClass("validate"); }
+            if (!Common.CheckEmail($('#EmailC1').val())) { $('#EmailC1').val(''); document.getElementsByName('Email')[0].placeholder = 'Invalid email address'; $('#EmailC1').focus().addClass("validate"); return false; } else { $('#EmailC1').removeClass("validate"); }
+            if ($('#PasswordC1').val() == '') { $('#PasswordC1').focus().addClass("validate"); return false; } else { $('#PasswordC1').focus().removeClass("validate"); }
+
+
+            return true;
+        }
+
+    </script>
+</head>
+<body>
+    <div class="container">
+        @if (TempData["message"] != null || ViewBag.message != null)
+        {
+            <div id="divmessage">
+                @if (TempData["message"] != null)
+                {
+                    @Html.Raw(TempData["message"].ToString())
+                }
+                @if (ViewBag.message != null)
+                {
+                    @Html.Raw(ViewBag.message.ToString())
+                }
+            </div>
+        }
+
+
+        <div class="header">
+            <div class="header-logo">
+                <div class="logo-container">
+                    <!-- Temple Icon SVG -->
+                    <img src="Content/User/images/favicon.png" style="width: 40px;" alt="@objAppInfo.SiteName" title="@objAppInfo.SiteName" />
+                </div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.9rem;">@objAppInfo.SiteName</div>
+                 @*    <div style="font-size: 0.75rem; opacity: 0.8;">Individual Ticket</div> *@
+                </div>
+            </div>
+
+            <div class="header-content">
+                <div class="ticket-badge">Individual Ticket</div>
+                <h1>Ticket Check-In</h1>
+                <p>Scan-based Individual Ticket Management</p>
+            </div>
+            @if (this.User.Identity.IsAuthenticated && this.User.Identity.Name != null && Context.Session != null && Context.Session.GetString("username") != null)
+            {
+                if (objEventRegTickets.Status == "Yes")
+                {
+
+
+                }
+                else
+                {
+                    <div class="header-actions">
+                        <button class="login-btn">Check-In</button>
+                    </div>
+                }
+
+            }
+            else
+            {
+                <div class="header-actions">
+                    <button class="login-btn" onclick="openLoginModal()">Login</button>
+                </div>
+            }
+        </div>
+
+        <div class="content">
+
+            <!-- ============ EVENT REGISTRATION DETAILS ============ -->
+            <h2 class="ed-page-title">Event Registration Details</h2>
+
+            <!-- Event Name -->
+            <div class="ed-name">
+                <span class="ed-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+                </span>
+                <div>
+                    <span class="ed-label">Event Name</span>
+                    <span class="ed-event-title">@objEventRegTickets.EventName</span>
+                </div>
+            </div>
+
+            <!-- Event Date + Location -->
+            <div class="ed-meta">
+                <div class="ed-meta-item">
+                    <span class="ed-icon sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+                    </span>
+                    <div class="ed-meta-text">
+                        <span class="ed-label">Event Date</span>
+                        <span class="ed-meta-value">@objEventRegTickets.StartDate</span>
+                        
+                    </div>
+                </div>
+              
+            </div>
+            <div class="ed-meta">
+             
+                <div class="ed-meta-item">
+                    <span class="ed-icon sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                    </span>
+                    <div class="ed-meta-text">
+                        <span class="ed-label">Event Location</span>
+                        <span class="ed-meta-value">@objEventRegTickets.Location</span>
+
+                    </div>
+                </div>
+            </div>
+            <!-- ============ REGISTRANT INFORMATION ============ -->
+            <div class="ed-card">
+                <div class="ed-card-head">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4.2" /><path d="M3.5 21c0-4.4 3.8-6.8 8.5-6.8s8.5 2.4 8.5 6.8z" /></svg>
+                    Registrant Information
+                </div>
+                <div class="ed-card-body">
+                    <div class="ed-grid">
+                        <div class="ed-field">
+                            <span class="ed-label">First Name</span>
+                            <span class="ed-value">@objEventRegTickets.FirstName</span>
+                        </div>
+                        <div class="ed-field">
+                            <span class="ed-label">Last Name</span>
+                            <span class="ed-value">@objEventRegTickets.LastName</span>
+                        </div>
+                        <div class="ed-field">
+                            <span class="ed-label">Mobile</span>
+                            <span class="ed-value">@objEventRegTickets.PhoneNo</span>
+                        </div>
+                        <div class="ed-field">
+                            <span class="ed-label">Email</span>
+                            <span class="ed-value">@objEventRegTickets.Email</span>
+                        </div>
+                      
+                     
+                            <div class="ed-field full">
+                                <span class="ed-label">Additional Info</span>
+                            <span class="ed-value normal">@objEventRegTickets.Address</span>
+                            </div>
+                      
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============ TICKET DETAILS + CHECK-IN ============ -->
+            <div class="ed-card">
+                <div class="ed-card-head">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6z" /><path d="M14 5v14" stroke-dasharray="2 2.5" /></svg>
+                    Ticket Details
+                </div>
+                <div class="ed-card-body">
+
+                    <div class="ticket-header">
+                        <label class="ticket-label">Ticket Number :</label>
+                        <div class="ticket-id-display">@objEventRegTickets.TicketId</div>
+                        <label class="ticket-label">Check-In :</label>
+                        <div class="ticket-status-large @(objEventRegTickets.Status == "Yes" ? "status-checked-in" : "status-pending")">@(objEventRegTickets.Status != null && objEventRegTickets.Status != "" ? objEventRegTickets.Status : "Pending")</div>
+                    </div>
+
+                    <div class="ed-grid">
+                        <div class="ed-field">
+                            <span class="ed-label">Registration Type</span>
+                            <span class="ed-value">@objEventRegTickets.RegistrationTitle Ticket @objEventRegTickets.SequenceNo</span>
+                        </div>
+                        @*<div class="detail-item">
+                            <div class="detail-label">Sequence Number</div>
+                            <div class="detail-value">003</div>
+                        </div>*@
+                        <div class="ed-field">
+                            <span class="ed-label">Amount</span>
+                            <span class="ed-value">$@objEventRegTickets.PaidAmount</span>
+                        </div>
+                        <div class="ed-field full">
+                            <span class="ed-label">Purchase Date</span>
+                            @*<div class="detail-value">@objEventRegTickets.UpdatedTime</div>*@
+                            <span class="ed-value">
+                                @TimeZoneInfo.ConvertTimeFromUtc(
+                                objEventRegTickets.UpdatedTime.Value,
+                                                                TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time")
+                                                                )
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (objEventRegTickets.Status != "Yes")
+                    {
+                        if (this.User.Identity.IsAuthenticated && this.User.Identity.Name != null && Context.Session != null && Context.Session.GetString("username") != null)
+                        {
+                            using (Html.BeginForm("InsertEventCheckIn", "Event", FormMethod.Post, new { enctype = "multipart/form-data" }))
+                            {
+                                <input id="EventUserInfoId" name="EventUserInfoId" type="hidden" value="@objEventRegTickets.EventUserInfoId" />
+                                <input id="EventId" name="EventId" type="hidden" value="@objEventRegTickets.EventId" />
+                                <input id="EventRegTicketId" name="EventRegTicketId" type="hidden" value="@objEventRegTickets.EventRegTicketId" />
+                                <input id="uid" name="uid" value="@uid" type="hidden" />
+
+                                @*<div class="section-title">Individual Ticket Check-In</div>*@
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                                    <div class="form-group">
+                                        <label class="form-label">Check-In Status *</label>
+                                        <select class="form-select" id="Status" name="Status" required>
+                                            <option value="">Select Status</option>
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </div>
+
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Comments </label>
+                                    <textarea class="form-textarea" id="Comments" name="Comments" placeholder="Enter your comments here..."></textarea>
+                                </div>
+
+                                <div class="button-group">
+                                    <button type="submit" class="btn btn-primary">Update</button>
+                                    @*<button type="button" class="btn btn-secondary" onclick="resetForm()">Reset Form</button>
+                                    <a href="#" class="btn btn-success" style="text-decoration: none;">View All Tickets</a>*@
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- Login Note for Non-authenticated Users -->
+                            <div class="login-note">
+                                <strong>Note:</strong>  Do you have login? If yes, Click Here  and submit details.
+                                <a href="#" class="login-link" onclick="openLoginModal()">click here</a>
+                            </div>
+                        }
+                    }
+                    else if (objEventRegTickets.Status == "Yes")
+                    {
+                        <div class="form-section" style="margin-top:20px">
+                            <div class="event-details"><h4>Check-In Completed</h4></div>
+                            <p style="color:green;font-weight:bold;">This ticket for this registration are already checked in.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="login-note">
+                            <strong>Note:</strong>  Do you have login? If yes, Click Here  and submit details.
+                            <a href="#" class="login-link" onclick="openLoginModal()">click here</a>
+                        </div>
+                    }
+
+                </div>
+            </div>
+
+            <!-- ============ CURRENT CHECK-IN STATUS ============ -->
+            @if (objEventRegTickets.Status == "Yes")
+            {
+                <div class="ed-card">
+                    <div class="ed-card-head">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.8 2.8L16.5 9.5" /></svg>
+                        Current Status
+                    </div>
+                    <div class="ed-card-body">
+
+                        @*  <div class="alert alert-warning">
+                            <strong>Status:</strong> This ticket is pending check-in. Use the form above to update the check-in status.
+                        </div> *@
+
+                        <div class="ed-grid">
+                            <div class="ed-field">
+                                <span class="ed-label">Check-In Status</span>
+                                <span class="ed-value">@(objEventRegTickets.Status != null && objEventRegTickets.Status != "" ? objEventRegTickets.Status : "Pending Check-In")</span>
+                            </div>
+                            <div class="ed-field">
+                                <span class="ed-label">Check-In Time</span>
+                                @*<div class="info-value">@objEventRegTickets.CheckInDate</div>*@
+                                <span class="ed-value">
+                                    @TimeZoneInfo.ConvertTimeFromUtc(
+                                    objEventRegTickets.CheckInDate,
+                                                                TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time")
+                                                                )
+                            </span>
+                        </div>
+
+                        @*<div class="info-item">
+                                <div class="info-label">Checked By</div>
+                                <div class="info-value">@objEventRegTickets.UpdatedBy</div>
+                            </div>*@
+
+                        <div class="ed-field full">
+                            <span class="ed-label">Check-In Comments</span>
+                            <span class="ed-value normal">@(objEventRegTickets.TicketComments != null && objEventRegTickets.TicketComments != "" ? objEventRegTickets.TicketComments : "--")</span>
+                        </div>
+                    </div>
+
+                    <!-- Check-in History -->
+                    <div class="checkin-history" style="display: none;" id="checkinHistory">
+                        <h4 style="margin-bottom: 10px; color: #2d3748;">Check-In History</h4>
+                        <div class="history-item">
+                            <div class="history-action">Initial Registration</div>
+                            <div class="history-time">Jan 10, 2024 2:30 PM</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        }
+        </div>
+    </div>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Login to  @objAppInfo.SiteName</h2>
+                <span class="close" onclick="closeLoginModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("CULLogOn", "Members", FormMethod.Post, new { name = "MLogin", id = "MLogin" }))
+                {
+                    <input type="hidden"
+                           value="@Context.Request.GetDisplayUrl()"
+                           id="ReturnUrl"
+                           name="ReturnUrl" />
+                    <div class="login-form-group">
+                        <label class="login-form-label">Username or Email *</label>
+                        <input type="text" class="login-form-input" name="CulturalEmail" id="EmailC1" placeholder="Enter your username or email" required>
+                    </div>
+                    <div class="login-form-group">
+                        <label class="login-form-label">Password *</label>
+                        <input type="password" class="login-form-input" name="Password" id="PasswordC1" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="login-submit-btn">Login</button>
+                    @*<div class="forgot-password">
+                        <a href="#">Forgot Password?</a>
+                    </div>*@
+                }
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Login Modal Functions
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('loginModal').addEventListener('click', function (e) {
+            if (e.target === this) {
+                closeLoginModal();
+            }
+        });
+
+        // Login form submission
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username) {
+                alert('Please enter your username or email.');
+                return;
+            }
+
+            if (!password) {
+                alert('Please enter your password.');
+                return;
+            }
+
+            // Here you would typically submit the login data to your server
+            alert('Login functionality would be implemented here.\nUsername: ' + username);
+            closeLoginModal();
+        });
+
+        // Form validation and submission for check-in
+        document.getElementById('checkinForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const registrationType = document.getElementById('registrationType').value;
+            const status = document.getElementById('status').value;
+            const comments = document.getElementById('comments').value.trim();
+
+            if (!registrationType) {
+                alert('Please select a registration type.');
+                return;
+            }
+
+            if (!status) {
+                alert('Please select a check-in status.');
+                return;
+            }
+
+            //if (!comments) {
+            //    alert('Please enter comments.');
+            //    return;
+            //}
+
+            // Here you would typically submit the form data
+            alert(`Check-in status updated for ${registrationType}: ${status}`);
+        });
+
+        // Add smooth scroll behavior for better UX
+        document.documentElement.style.scrollBehavior = 'smooth';
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeLoginModal();
+            }
+        });
+    </script>
+    <script>
+        // Form handling
+        document.getElementById('ticketCheckInForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const ticketId = document.getElementById('ticketId').value;
+            const action = document.getElementById('checkinAction').value;
+            const notes = document.getElementById('adminNotes').value;
+            const comments = document.getElementById('comments').value;
+
+            if (!action) {
+                alert('Please select a check-in action.');
+                return;
+            }
+
+            // Simulate API call
+            const formData = {
+                ticketId: ticketId,
+                action: action,
+                notes: notes,
+                comments: comments,
+                timestamp: new Date().toISOString(),
+                adminUser: 'current_admin_user' // This would come from session
+            };
+
+            console.log('Submitting ticket check-in:', formData);
+
+            // Simulate success response
+            setTimeout(() => {
+                if (action === 'checkin') {
+                    updateTicketStatus('Checked In', new Date().toLocaleString());
+                    showSuccessMessage('Ticket TKT-003 has been successfully checked in!');
+                } else {
+                    updateTicketStatus('Pending', 'Not Checked In');
+                    showSuccessMessage('Check-in for ticket TKT-003 has been undone!');
+                }
+
+                // Add to history
+                addToHistory(action === 'checkin' ? 'Checked In' : 'Check-In Undone', new Date().toLocaleString());
+
+                // Reset form
+                resetForm();
+            }, 1000);
+        });
+
+        function updateTicketStatus(status, time) {
+            // Update status badge
+            const statusBadge = document.querySelector('.ticket-status-large');
+            statusBadge.textContent = status;
+            statusBadge.className = `ticket-status-large ${status === 'Checked In' ? 'status-checked-in' : 'status-pending'}`;
+
+            // Update status info
+            document.querySelector('.info-grid .info-value').textContent = status;
+            document.querySelectorAll('.info-grid .info-value')[1].textContent = time;
+            document.querySelectorAll('.info-grid .info-value')[2].textContent = status === 'Checked In' ? 'Admin User' : '-';
+
+            // Update alert
+            const alert = document.querySelector('.alert');
+            if (status === 'Checked In') {
+                alert.className = 'alert alert-success';
+                alert.innerHTML = '<strong>Status:</strong> This ticket has been successfully checked in.';
+            } else {
+                alert.className = 'alert alert-warning';
+                alert.innerHTML = '<strong>Status:</strong> This ticket is pending check-in. Use the form below to update the check-in status.';
+            }
+        }
+
+        function addToHistory(action, time) {
+            const historyDiv = document.getElementById('checkinHistory');
+            historyDiv.style.display = 'block';
+
+            const newItem = document.createElement('div');
+            newItem.className = 'history-item';
+            newItem.innerHTML = `
+                            <div class="history-action">${action}</div>
+                            <div class="history-time">${time}</div>
+                        `;
+
+            historyDiv.appendChild(newItem);
+        }
+
+        function showSuccessMessage(message) {
+            // Create and show a temporary success message
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success';
+            successDiv.textContent = message;
+
+            // Insert at top of content
+            const content = document.querySelector('.content');
+            content.insertBefore(successDiv, content.children[1]);
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                successDiv.remove();
+            }, 5000);
+        }
+
+        function resetForm() {
+            document.getElementById('checkinAction').value = '';
+            document.getElementById('adminNotes').value = '';
+            document.getElementById('comments').value = '';
+        }
+
+        // Auto-focus on the action dropdown when page loads
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('checkinAction').focus();
+        });</script>
+</body>
+</html>

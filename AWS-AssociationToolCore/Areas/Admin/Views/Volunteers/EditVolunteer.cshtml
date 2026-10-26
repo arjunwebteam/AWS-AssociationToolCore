@@ -1,0 +1,508 @@
+﻿@{
+    ViewBag.Title = "EditVolunteer";
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+    ViewBag.Pageheading = "Edit Volunteer";
+
+    AWS_AssociationToolCore.Entities.Volunteers objTemplates = ViewBag.objVolunteers;
+    List<AWS_AssociationToolCore.Entities.VolunteerCategories> lstVolunteerCategory = ViewBag.lstVolunteerCategory;
+    List<AWS_AssociationToolCore.Entities.Events> lstEvents = ViewBag.lstEvents;
+    List<AWS_AssociationToolCore.Entities.Chapters> lstChapters = ViewBag.lstChapters;
+    List<AWS_AssociationToolCore.Entities.country> lstCountries = new List<AWS_AssociationToolCore.Entities.country>();
+    lstCountries = ViewBag.lstCountries;
+
+    Int64 ChapterId = ViewBag.ChapterId;
+
+
+
+    int status = 0;
+
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+
+
+}
+
+<script type="text/javascript">
+        $(document).ready(function () {
+            CategoriesBind();
+            StatesBind();
+            $('#wVolunteer, #wVolunteers').addClass('active');
+        $('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+        $('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+    });
+            $(document).ready(function () {
+            $('.dynamic-fields-row .dcf-existing-file-item').each(function () {
+                var $item = $(this);
+                if ($item.find('.dcf-download-btn').length) return; // already added
+
+                var $img = $item.find('img').first();
+                if (!$img.length) return;
+
+                var src = $img.attr('src');
+                // remove GUID_ prefix from file name for download
+                var fileName = decodeURIComponent(src.split('/').pop())
+                    .replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i, '');
+
+                var $btn = $('<a class="dcf-download-btn" title="Download"><i class="fa fa-download"></i></a>')
+                    .attr('href', src)
+                    .attr('download', fileName);
+
+                $item.append($btn);
+            });
+        });
+    $(document).ready(function () {
+        $("#VolunteerForm").validate({
+            rules: {
+                FirstName: "required",
+                LastName: "required",
+                Email: {
+                    required: true,
+                    email: true
+                },
+                PhoneNo: {
+                    required: true,
+                    minlength: 12
+                },
+                City: "required",
+
+            },
+            messages: {
+                FirstName: " First Name is required",
+                LastName: " Last Name is required",
+                Email: {
+                    required: "Please enter email address",
+                    email: "Please enter valid email address",
+                },
+                PhoneNo: {
+                    required: "Please enter phone number",
+                    phone: "Please enter valid phone number",
+                },
+                City: " City is required",
+
+
+            },
+
+            errorElement: "div",
+            errorPlacement: function (error, element) {
+                // Add the `invalid-feedback` class to the error element
+                error.addClass("invalid-feedback");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+
+                // Move the error element after the fieldset element
+                if (element.closest(".input-box").length) {
+                    element.closest(".input-box").after(error);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                // Highlight the input, textarea, or select element with the `is-invalid` class
+                var $element = $(element);
+                if ($element.is('input, textarea, select')) {
+                    $element.addClass("is-invalid").removeClass("is-valid");
+                }
+
+
+            },
+                       unhighlight: function (element, errorClass, validClass) {
+                // Unhighlight the input, textarea, or select element by adding the `is-valid` class
+                var $element = $(element);
+                if ($element.is('input, textarea, select')) {
+                    $element.addClass("is-valid").removeClass("is-invalid");
+                }
+
+            }
+        });
+
+        DynamicCustomFields.wireValidation('#VolunteerForm', '.dynamic-fields-row');
+        $(document).on('input change', '.dynamic-fields-row input, .dynamic-fields-row select, .dynamic-fields-row textarea', function () {
+    var $field = $(this);
+    if ($field.val() && $field.val().toString().trim() !== '') {
+        $field.closest('[class*="col-"]').find('.invalid-feedback, em, .help-block, .error, .text-danger:not(label span)').hide();
+        $field.removeClass('is-invalid');
+    }
+});
+   
+
+        });
+
+     function VCheckEmailAvailability(email) {
+        var returnval = null;
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("CheckVolunteerEmailAvailability", "Volunteers")', // the URL of the controller action method
+            data: { Email: email }, // optional data
+            datatype: "JSON",
+            async: false,
+            success: function (result) {
+                if (result.ok) {
+                    returnval = result.data;
+                }
+            }
+        });
+        return returnval;
+    }
+
+    function GECheckEmailAvailability(email) {
+        var returnval = null;
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("CheckEmailAvailability", "Volunteers")', // the URL of the controller action method
+            data: { VolunteerId: $('#VolunteerId').val(), Email: email }, // optional data
+            datatype: "JSON",
+            async: false,
+            success: function (result) {
+                if (result.ok) {
+                    returnval = result.data;
+                }
+            }
+        });
+        return returnval;
+    }
+      function StatesBind() {
+        var CountryID = $('#Country').val();
+        $.ajax({
+            url: '@Url.Action("GetStateByCountryID", "Volunteers")',
+            type: 'POST',
+            data: { CountryID: CountryID }, // optional data
+            datatype: "JSON",
+            success: function (result) {
+                if (result.ok) {
+                    var sb = "<option value=\"\">-- Select --</option>";
+                    States = result.data;
+                    if (States != null) {
+                        for (var i = 0; i < States.length; i++) {
+                            //sb = sb + "<option value=\"" + States[i].StateID + "\">" + States[i].StateName + "</option>";
+                            sb = sb + "<option " + (@objTemplates.State == States[i].StateID ? "selected=selected" : "") + " value=\"" + States[i].StateID + "\">" + States[i].StateName + "</option>";
+                        }
+                    }
+                    $('#State').html(sb);
+                }
+            }
+        });
+    }
+
+        function CategoriesBind() {
+          var ChapterId = $('#ChapterId').val();
+
+        $.ajax({
+            url: '@Url.Action("VolunteerCategoriesGetChapterId", "VolunteerCategories")',
+            type: 'POST',
+            data: { ChapterId: ChapterId },
+            datatype: "JSON",
+            success: function (result) {
+                if (result.ok) {
+
+                    var lstVolunteerCategories = result.data;
+                    var sb = "<label>Volunteer Category : </label>";
+                    sb = sb + "<select id=\"VolunteerCategoryId\" name=\"VolunteerCategoryId\" class=\"form-control\">";
+                    sb = sb + "<option value=\"\">Select</option>";
+                    if (lstVolunteerCategories != null) {
+                        for (var i = 0; i < lstVolunteerCategories.length; i++) {
+                            //sb = sb + "<option  value=\"" + lstVolunteerCategories[i].VolunteerCategoryId + "\">" + lstVolunteerCategories[i].CategoryName + "</option>";
+                            sb = sb + "<option " + (lstVolunteerCategories[i].VolunteerCategoryId == @objTemplates.VolunteerCategoryId ? "selected = selected" : "") + " value=\"" + lstVolunteerCategories[i].VolunteerCategoryId + "\">" + lstVolunteerCategories[i].CategoryName + "</option>";
+
+                        }
+                    }
+                    sb = sb + "</select>";
+                    $('#divVolunteerCategory').html('');
+                    $('#divVolunteerCategory').html(sb);
+                    window.asd = $('.form-control').SumoSelect({ csvDispCount: 3, selectAll: true, search: true, searchText: 'Enter here.', captionFormatAllSelected: "Yeah, OK, so everything." });
+                }
+            }
+        });
+    }
+
+        function PhoneNochange(event) {
+            if (event.keyCode == 8 || event.keyCode == 46) {
+            }
+            else {
+                var ph = $('#PhoneNo').val();
+                if (ph.length == 3) { $('#PhoneNo').val(ph + '-'); }
+                if (ph.length == 7) { $('#PhoneNo').val(ph + '-'); }
+            }
+    }
+    function handlePaste(event) {
+        // Check if the target is the input element
+        if (event.target.id === "PhoneNo") {
+            const pastedNumber = (event.clipboardData || window.clipboardData).getData('text');
+            const formattedNumber = formatPhoneNumber(pastedNumber);
+            event.target.value = formattedNumber;
+            // Replace input value with formatted number
+            event.preventDefault();
+            // Prevent default pasting behavior
+        }
+    }
+</script>
+<script src="Scripts/Admin/jquery-ui-1.9.2.custom.min.js"></script>
+<script src="Scripts/Admin/jquery.validate.js"></script>
+<script type="text/javascript" src="ckeditor/ckeditor.js"></script>
+<script type="text/javascript" src="ckfinder/ckfinder.js"></script>
+
+<div class="content">
+    @using (Html.BeginForm("AddVolunteer", "Volunteers", FormMethod.Post, new { enctype = "multipart/form-data", @id = "VolunteerForm", @name = "VolunteerForm", @novalidate = "novalidate" }))
+    {
+        <input type="hidden" name="VolunteerId" id="VolunteerId" value="@objTemplates.VolunteerId" />
+
+
+        if (objAppInfo.chapterStatus == "No")
+        {
+            <input type="hidden" value="1" name="ChapterId" id="ChapterId" />
+        }
+       
+
+        <input type="hidden" value="@ViewBag.mid" name="mid" id="mid" />
+
+        <div class="box validation">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">First Name : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="FirstName" id="FirstName" value="@objTemplates.FirstName" placeholder="FirstName">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Last Name : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="LastName" id="LastName" value="@objTemplates.LastName" placeholder="LastName">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Email : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="Email" id="Email" value="@objTemplates.Email" placeholder="Email">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">PhoneNo : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" value="@objTemplates.PhoneNo" onkeypress="PhoneNochange(event); return Common.isNumberKey(event);" onpaste="handlePaste(event);" maxlength="12" name="PhoneNo" id="PhoneNo" placeholder="PhoneNo">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">City : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" value="@objTemplates.City" name="City" id="City" placeholder="PhoneNo">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Country : </label>
+                                <select class="single-select" id="Country" name="Country" onchange="StatesBind()">
+                                    <option value="">Select</option>
+                                    @if (lstCountries.Count != 0)
+                                    {
+                                        foreach (var item in lstCountries)
+                                        {
+                                            <option @(item.CountryID == Convert.ToInt64(objTemplates.Country) ? "selected=selected" : "") value="@item.CountryID">@item.CountryName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">State : </label>
+                                <select class="single-select" name="State" id="State">
+                                    <option value="@objTemplates.State" selected="selected">@objTemplates.State</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">ZipCode : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="ZipCode" id="ZipCode" placeholder="ZipCode" maxlength="8" value="@objTemplates.ZipCode" onkeypress="return Common.isNumberKey(event);">
+                            </div>
+                        </div>
+                        @if (objAppInfo.chapterStatus == "Yes")
+                        {
+                            <div class="col-lg-3 col-md-6">
+                                <div class="input-box">
+                                    <label class="form-label">Chapters : </label>
+                                  
+                                   
+                                        <select class="form-control" id="ChapterId" name="ChapterId" onchange="CategoriesBind();" style="@(ChapterId != 1 ? "pointer-events:none;" : "")">
+
+                                            <option value="">-- Select --</option>
+                                            @if (lstChapters != null && lstChapters.Count != 0)
+                                            {
+                                                foreach (var item in lstChapters)
+                                                {
+                                                    <option @(item.ChapterId == objTemplates.ChapterId ? "selected=selected" : "") value="@item.ChapterId">@item.ChapterName</option>
+
+                                                }
+                                            }
+                                        </select>
+                                </div>
+                            </div>
+
+                        }
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Volunteer Category : <span class="text-danger">*</span></label>
+                                <select class="single-select" name="VolunteerCategoryId" id="VolunteerCategoryId">
+                                    <option value="">-- Select --</option>
+                                    @if (lstVolunteerCategory != null && lstVolunteerCategory.Count != 0)
+                                    {
+                                        foreach (var item in lstVolunteerCategory)
+                                        {
+                                            <option @(item.VolunteerCategoryId == objTemplates.VolunteerCategoryId ? "selected=selected" : "") value="@item.VolunteerCategoryId">@item.CategoryName (@item.VolunteerHours Hrs)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Hours Spent : </label>
+                                <input type="text" class="form-control" name="HoursSpent" id="HoursSpent" value="@objTemplates.HoursSpent" placeholder="Hours Spent" maxlength="2" onkeypress="return Common.isNumberKey(event);">
+                            </div>
+                        </div>
+
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Address : <span class="text-danger"></span></label>
+                                <textarea class="form-control" id="Address" name="Address">@objTemplates.Address</textarea>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Address2 : <span class="text-danger"></span></label>
+                                <textarea class="form-control" id="Address2" name="Address2">@objTemplates.Address2</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (objAppInfo.CustomFieldStatus == "Yes")
+        {
+            var cfForm = new AWS_AssociationToolCore.BLL.CustomFields()
+            .GetDynamicForm(AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Volunteer, objTemplates.VolunteerId);
+
+            if (cfForm.Fields != null && cfForm.Fields.Count > 0)
+            {
+                <div class="box validation">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row g-3 dynamic-fields-row">
+
+                                @await Component.InvokeAsync("DynamicCustomFields", new { formCode = AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Volunteer, recordId = objTemplates.VolunteerId, theme = "admin" })
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        <div class="box validation" style="display:none">
+            <div class="box-header">
+            </div>
+            <div class="box-body">
+                <div class="row">
+                    <div class="col-xs-12 col-lg-3 col-sm-6">
+                        <label>City : <span class="red-t">*</span></label>
+                        <input type="text" id="SelfCity" value="@objTemplates.SelfCity" name="SelfCity" class="form-control">
+                    </div>
+                    <div class="col-xs-12 col-lg-3 col-sm-6">
+                        <label>District : <span class="red-t">*</span></label>
+                        <input type="text" id="SelfDistrict" value="@objTemplates.SelfDistrict" name="SelfDistrict" class="form-control">
+                    </div>
+                    <div class="col-xs-12 col-lg-3 col-sm-6">
+                        <label>Contact Name : <span class="red-t">*</span></label>
+                        <input type="text" id="SelfName" value="@objTemplates.SelfName" name="SelfName" class="form-control">
+                    </div>
+                    <div class="col-xs-12 col-lg-3 col-sm-6">
+                        <label>Contact Phone : <span class="red-t">*</span></label>
+                        <input type="text" id="SelfPhoneNo" value="@objTemplates.SelfPhoneNo" name="SelfPhoneNo" class="form-control">
+                    </div>
+                    <div class="col-xs-12 col-lg-3 col-sm-6" style="display:none;">
+                        <label>Your Relation : <span class="red-t">*</span></label>
+                        <input type="text" id="SelfRelation" value="@objTemplates.SelfRelation" name="SelfRelation" class="form-control">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-2 col-3 text-end ms-auto">
+                <button type="submit" class="btn btn-success px-3 " value="submit">Submit</button>
+                <a class="btn btn-primary px-3" href="@Url.Action("Index", "Volunteers", new { mid = ViewBag.mid })">Cancel</a>
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+   
+</script>
+<style>
+    .card-body:has(> .dynamic-fields-row) {
+        padding-top: 1.5rem;
+    }
+</style>
+<style>
+    .dynamic-fields-row .dcf-existing-file-item .dcf-file-name {
+        word-break: break-all;
+        font-size: 13px;
+    }
+
+    .dynamic-fields-row .dcf-view-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 6px;
+        padding: 4px 12px;
+        font-size: 13px;
+        border-radius: 4px;
+        background: #0d6efd;
+        color: #fff !important;
+        text-decoration: none;
+    }
+
+        .dynamic-fields-row .dcf-view-btn:hover {
+            background: #0a58ca;
+        }
+</style>
+
+<script>
+    $(document).ready(function () {
+        $('.dynamic-fields-row .dcf-existing-file-item').each(function () {
+            var $item = $(this);
+
+            if ($item.find('img').length) return;            // images ki separate download icon undi
+            if ($item.find('.dcf-view-btn').length) return;  // already added
+
+            var $link = $item.find('a').first();
+            if (!$link.length) return;
+
+            var href = $link.attr('href');
+            var fileName = decodeURIComponent(href.split('?')[0].split('/').pop())
+                .replace(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}_/i, '');
+
+            // file name clean cheyyi (GUID teesey) + new tab lo open
+            $link.text(fileName)
+                 .addClass('dcf-file-name')
+                 .attr({ target: '_blank', rel: 'noopener noreferrer' });
+
+            // View Document button
+            var $view = $('<a class="dcf-view-btn" title="View Document"><i class="fa fa-eye"></i> View Document</a>')
+                .attr({ href: href, target: '_blank', rel: 'noopener noreferrer' });
+
+            $item.append('<br/>').append($view);
+        });
+    });
+</script>

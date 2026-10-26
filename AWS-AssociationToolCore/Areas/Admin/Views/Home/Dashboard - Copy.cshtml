@@ -1,0 +1,1446 @@
+﻿@using AWS_AssociationToolCore.BLL
+
+@{
+    ViewBag.Title = "Dashboard";
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+    ViewBag.Pageheading = "Dashboard";
+
+    Int64 MembersActiveCount = ViewBag.MembersActiveCount;
+    decimal MembersActiveSumAmount = ViewBag.MembersActiveSumAmount;
+    Int64 MembersInActiveCount = ViewBag.MembersInActiveCount;
+
+    decimal MembersInActiveSumAmount = ViewBag.MembersInActiveSumAmount;
+    decimal DonationsWeeklyAmount = ViewBag.DonationsWeeklyAmount;
+    decimal DonationsMonthlyAmount = ViewBag.DonationsMonthlyAmount;
+    Int64 DonationsWeeklyCount = ViewBag.DonationsWeeklyCount;
+    Int64 DonationsMonthlyCount = ViewBag.DonationsMonthlyCount;
+
+    List<AWS_AssociationToolCore.Entities.Members> lstactiveMembers = ViewBag.lstactiveMembers;
+    List<AWS_AssociationToolCore.Entities.Members> lstinactiveMembers = ViewBag.lstinactiveMembers;
+    List<AWS_AssociationToolCore.Entities.ServiceDonations> lstServiceDonations = ViewBag.lstServiceDonations;
+    List<AWS_AssociationToolCore.Entities.Events> lstEvents = ViewBag.lstEvents;
+    List<AWS_AssociationToolCore.Entities.TableCount> lstTableCounts = ViewBag.lstTableCounts;
+
+    var inv = System.Globalization.CultureInfo.InvariantCulture;
+
+    // Initials for the round avatar next to a name
+    string Initials(string first, string last)
+    {
+        var a = string.IsNullOrWhiteSpace(first) ? "" : first.Trim().Substring(0, 1).ToUpper();
+        var b = string.IsNullOrWhiteSpace(last) ? "" : last.Trim().Substring(0, 1).ToUpper();
+        var r = a + b;
+        return r == "" ? "?" : r;
+    }
+
+    // Soft colour for the payment status pill
+    string PayClass(string status)
+    {
+        var v = (status ?? "").Trim().ToLower();
+        if (v == "completed" || v == "paid" || v == "success") return "pill-green";
+        if (v == "pending") return "pill-amber";
+        if (v == "" || v == "n/a") return "pill-grey";
+        return "pill-rose";
+    }
+
+    // "In 8 days", "Today", "3 days ago" for the events table
+    string DaysLabel(DateTime d)
+    {
+        var n = (d.Date - DateTime.Today).Days;
+        if (n == 0) return "Today";
+        if (n == 1) return "Tomorrow";
+        if (n > 1) return "In " + n + " days";
+        if (n == -1) return "Yesterday";
+        return Math.Abs(n) + " days ago";
+    }
+    string DaysClass(DateTime d)
+    {
+        var n = (d.Date - DateTime.Today).Days;
+        if (n < 0) return "pill-grey";
+        if (n <= 7) return "pill-amber";
+        return "pill-violet";
+    }
+
+    // Member split (donut)
+    Int64 totalMembers = MembersActiveCount + MembersInActiveCount;
+    double activePct = totalMembers == 0 ? 0 : (MembersActiveCount * 100.0 / totalMembers);
+    string activePctCss = activePct.ToString("0.##", inv);
+    string activePctText = activePct.ToString("0.#", inv);
+
+    // Membership types in the latest orders (bars)
+    var typeGroups = (lstactiveMembers ?? new List<AWS_AssociationToolCore.Entities.Members>())
+        .GroupBy(m => string.IsNullOrWhiteSpace(m.MembershipType) ? "Other" : m.MembershipType.Trim())
+        .Select(g => new { Name = g.Key, Count = g.Count() })
+        .OrderByDescending(x => x.Count)
+        .Take(5)
+        .ToList();
+    int typeMax = typeGroups.Count == 0 ? 1 : typeGroups.Max(x => x.Count);
+
+    // Donations by cause in the latest donations (bars)
+    var causeGroups = (lstServiceDonations ?? new List<AWS_AssociationToolCore.Entities.ServiceDonations>())
+        .GroupBy(d => string.IsNullOrWhiteSpace(d.DonationCause) ? "Other" : d.DonationCause.Trim())
+        .Select(g => new { Name = g.Key, Total = g.Sum(x => Convert.ToDouble(x.Amount)) })
+        .OrderByDescending(x => x.Total)
+        .Take(5)
+        .ToList();
+    double causeMax = causeGroups.Count == 0 ? 1 : causeGroups.Max(x => x.Total);
+    if (causeMax <= 0) { causeMax = 1; }
+}
+
+<script>
+    $(document).ready(function () {
+        $('#wDashboard').addClass('active');
+    });
+</script>
+
+<style type="text/css">
+    :root {
+        --d-ink: #1f2a44;
+        --d-muted: #6f7a93;
+        --d-line: #e8ebf3;
+        --d-bg: #f4f6fb;
+        --d-card: #ffffff;
+        --d-blue: #3d5bd9;
+        --d-blue-soft: #eaf0ff;
+        --d-blue-line: #d6e1ff;
+        --d-green: #1f8f55;
+        --d-green-soft: #e5f6ec;
+        --d-amber: #b4630a;
+        --d-amber-soft: #fff3e0;
+        --d-amber-line: #ffe0b2;
+        --d-rose: #c0392b;
+        --d-rose-soft: #ffeae7;
+        --d-teal: #0f7f8a;
+        --d-teal-soft: #e1f5f7;
+        --d-violet: #6b4bc4;
+        --d-violet-soft: #efeaff;
+    }
+
+    body {
+        background-color: var(--d-bg);
+    }
+
+    img {
+        max-width: 100% !important;
+    }
+
+    .body > .header .logo {
+        padding: 8px;
+    }
+
+    .dash {
+        color: var(--d-ink);
+        padding: 4px 2px 28px;
+        font-variant-numeric: tabular-nums;
+    }
+
+        .dash h6 {
+            font-size: 14px !important;
+        }
+
+        /* ---------- Soft tones ---------- */
+        .dash .tone-blue {
+            background: var(--d-blue-soft);
+            color: var(--d-blue);
+        }
+
+        .dash .tone-green {
+            background: var(--d-green-soft);
+            color: var(--d-green);
+        }
+
+        .dash .tone-amber {
+            background: var(--d-amber-soft);
+            color: var(--d-amber);
+        }
+
+        .dash .tone-rose {
+            background: var(--d-rose-soft);
+            color: var(--d-rose);
+        }
+
+        .dash .tone-teal {
+            background: var(--d-teal-soft);
+            color: var(--d-teal);
+        }
+
+        .dash .tone-violet {
+            background: var(--d-violet-soft);
+            color: var(--d-violet);
+        }
+
+        /* ---------- Welcome panel ---------- */
+        .dash .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px 24px;
+            padding: 20px 24px;
+            margin-bottom: 18px;
+            background: linear-gradient(120deg, #eef2ff 0%, #f6f0ff 55%, #e9f7f4 100%);
+            border: 1px solid #e2e7fb;
+            border-radius: 16px;
+        }
+
+            .dash .hero h2 {
+                margin: 0;
+                font-size: 24px;
+                font-weight: 700;
+                color: var(--d-ink);
+            }
+
+            .dash .hero p {
+                margin: 4px 0 0;
+                font-size: 13.5px;
+                color: var(--d-muted);
+            }
+
+        .dash .hero-date {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 10px;
+            padding: 5px 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--d-blue);
+            background: rgba(255, 255, 255, .8);
+            border: 1px solid var(--d-blue-line);
+            border-radius: 999px;
+        }
+
+        .dash .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .dash .hero-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--d-ink);
+            background: #fff;
+            border: 1px solid var(--d-line);
+            border-radius: 11px;
+            text-decoration: none;
+            transition: border-color .15s ease, background-color .15s ease;
+        }
+
+            .dash .hero-btn i {
+                font-size: 15px;
+            }
+
+            .dash .hero-btn:hover {
+                border-color: var(--d-blue-line);
+                background: #f8faff;
+                color: var(--d-blue);
+            }
+
+        /* ---------- Overview strip ---------- */
+        .dash .stat-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: var(--d-card);
+            border: 1px solid var(--d-line);
+            border-radius: 16px;
+            box-shadow: 0 1px 2px rgba(31, 42, 68, .04), 0 6px 20px rgba(31, 42, 68, .04);
+            margin-bottom: 18px;
+        }
+
+        .dash .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 20px 22px;
+            border-right: 1px solid var(--d-line);
+        }
+
+            .dash .stat-item:last-child {
+                border-right: 0;
+            }
+
+        .dash .stat-icon {
+            width: 46px;
+            height: 46px;
+            min-width: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .dash .stat-label {
+            font-size: 13px;
+            color: var(--d-muted);
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .dash .stat-value {
+            font-size: 27px;
+            font-weight: 700;
+            line-height: 1.15;
+            margin: 0;
+            color: var(--d-ink);
+        }
+
+        .dash .stat-foot {
+            font-size: 12px;
+            color: var(--d-muted);
+            margin-top: 3px;
+        }
+
+        /* ---------- Section cards ---------- */
+        .dash .section-card {
+            background: var(--d-card);
+            border: 1px solid var(--d-line);
+            border-radius: 16px;
+            box-shadow: 0 1px 2px rgba(31, 42, 68, .04), 0 6px 20px rgba(31, 42, 68, .04);
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dash .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--d-line);
+            background: #fff;
+        }
+
+        .dash .section-icon {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+        }
+
+        .dash .section-title {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--d-ink);
+            line-height: 1.2;
+        }
+
+        .dash .section-sub {
+            font-size: 12.5px;
+            color: var(--d-muted);
+            margin-top: 2px;
+        }
+
+        .dash .section-body {
+            flex: 1;
+        }
+
+        .dash .section-foot {
+            padding: 11px 20px;
+            font-size: 12.5px;
+            color: var(--d-muted);
+            background: #fbfcfe;
+            border-top: 1px solid var(--d-line);
+        }
+
+        /* ---------- Soft button ---------- */
+        .dash .btn-soft {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            margin-left: auto;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--d-blue);
+            background: var(--d-blue-soft);
+            border: 1px solid var(--d-blue-line);
+            border-radius: 10px;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+
+            .dash .btn-soft:hover {
+                background: #dde7ff;
+                border-color: #bfd0ff;
+                color: #2f4bc2;
+            }
+
+            .dash .btn-soft:focus-visible,
+            .dash .hero-btn:focus-visible,
+            .dash .reg-link:focus-visible {
+                outline: 3px solid rgba(61, 91, 217, .35);
+                outline-offset: 2px;
+            }
+
+        /* ---------- Insight cards ---------- */
+        .dash .insight-body {
+            padding: 18px 20px 20px;
+            flex: 1;
+        }
+
+        .dash .donut-wrap {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        .dash .donut {
+            position: relative;
+            width: 128px;
+            height: 128px;
+            min-width: 128px;
+            border-radius: 50%;
+            background: conic-gradient(var(--d-green) calc(var(--pct) * 1%), #f6c9c2 0);
+        }
+
+        .dash .donut-hole {
+            position: absolute;
+            inset: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            border-radius: 50%;
+            line-height: 1.15;
+        }
+
+            .dash .donut-hole b {
+                font-size: 20px;
+                color: var(--d-ink);
+            }
+
+            .dash .donut-hole span {
+                font-size: 11.5px;
+                color: var(--d-muted);
+            }
+
+        .dash .legend {
+            display: grid;
+            gap: 12px;
+            flex: 1;
+            min-width: 140px;
+        }
+
+        .dash .legend-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13.5px;
+            color: #34405a;
+        }
+
+            .dash .legend-row i {
+                width: 10px;
+                height: 10px;
+                border-radius: 3px;
+                display: inline-block;
+            }
+
+            .dash .legend-row b {
+                margin-left: auto;
+                color: var(--d-ink);
+            }
+
+        .dash .bar-row + .bar-row {
+            margin-top: 14px;
+        }
+
+        .dash .bar-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-size: 13.5px;
+        }
+
+        .dash .bar-name {
+            color: #34405a;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dash .bar-val {
+            font-weight: 700;
+            color: var(--d-ink);
+            white-space: nowrap;
+        }
+
+        .dash .bar-track {
+            height: 8px;
+            background: #f1f3f9;
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .dash .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .dash .fill-0 {
+            background: #7c93f0;
+        }
+
+        .dash .fill-1 {
+            background: #5ec798;
+        }
+
+        .dash .fill-2 {
+            background: #f2b560;
+        }
+
+        .dash .fill-3 {
+            background: #a68ae6;
+        }
+
+        .dash .fill-4 {
+            background: #5cc2cc;
+        }
+
+        /* ---------- Tables ---------- */
+        .dash .table {
+            margin: 0;
+            --bs-table-bg: transparent;
+        }
+
+            /* headings stay visible while the list scrolls */
+            .dash .table thead th {
+                position: sticky;
+                top: 0;
+                z-index: 3;
+                background: #f8f9fd !important;
+                color: var(--d-muted) !important;
+                font-size: 12.5px;
+                font-weight: 600;
+                padding: 12px 20px;
+                border-bottom: 1px solid var(--d-line);
+                white-space: nowrap;
+            }
+
+            .dash .table tbody td {
+                padding: 13px 20px;
+                font-size: 14px;
+                color: #34405a;
+                vertical-align: middle;
+                border-bottom: 1px solid #f0f2f8;
+            }
+
+            .dash .table tbody tr:last-child td {
+                border-bottom: 0;
+            }
+
+            .dash .table tbody tr {
+                transition: background-color .12s ease;
+            }
+
+                .dash .table tbody tr:hover {
+                    background: #f8faff;
+                }
+
+        .dash .table-responsive {
+            max-height: none;
+        }
+
+        .dash .scroll-y {
+            max-height: 440px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #d3d9e8 transparent;
+        }
+
+            .dash .scroll-y::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .dash .scroll-y::-webkit-scrollbar-thumb {
+                background: #d3d9e8;
+                border-radius: 999px;
+            }
+
+        .dash .person {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 150px;
+        }
+
+        .dash .avatar {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            border-radius: 50%;
+            background: var(--d-blue-soft);
+            color: var(--d-blue);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dash .person-name {
+            margin: 0;
+            font-size: 14px !important;
+            font-weight: 600;
+            color: var(--d-ink);
+        }
+
+        .dash .mail-link {
+            color: var(--d-blue);
+            text-decoration: none;
+        }
+
+            .dash .mail-link:hover {
+                text-decoration: underline;
+            }
+
+        .dash .id-chip {
+            display: inline-block;
+            padding: 3px 9px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #4a5672;
+            background: #f1f3f9;
+            border-radius: 7px;
+            white-space: nowrap;
+        }
+
+        .dash .amount {
+            font-weight: 600;
+            color: var(--d-ink);
+            white-space: nowrap;
+        }
+
+        .dash .date-text {
+            color: var(--d-muted);
+            white-space: nowrap;
+        }
+
+        /* ---------- Pills ---------- */
+        .dash .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 11px;
+            font-size: 12.5px;
+            font-weight: 600;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+            .dash .pill::before {
+                content: "";
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+
+        .dash .pill-green {
+            background: var(--d-green-soft);
+            color: var(--d-green);
+        }
+
+        .dash .pill-amber {
+            background: var(--d-amber-soft);
+            color: var(--d-amber);
+        }
+
+        .dash .pill-rose {
+            background: var(--d-rose-soft);
+            color: var(--d-rose);
+        }
+
+        .dash .pill-grey {
+            background: #f1f3f9;
+            color: #7a849b;
+        }
+
+        .dash .pill-violet {
+            background: var(--d-violet-soft);
+            color: var(--d-violet);
+        }
+
+        .dash .type-pill {
+            display: inline-block;
+            padding: 4px 11px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--d-violet);
+            background: var(--d-violet-soft);
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+
+        .dash .cause-pill {
+            display: inline-block;
+            padding: 4px 11px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--d-teal);
+            background: var(--d-teal-soft);
+            border-radius: 8px;
+        }
+
+        /* ---------- Registration links ---------- */
+        .dash .reg-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 13px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--d-amber);
+            background: var(--d-amber-soft);
+            border: 1px solid var(--d-amber-line);
+            border-radius: 999px;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background-color .15s ease;
+        }
+
+            .dash .reg-link:hover {
+                background: #ffe8c4;
+                color: #9a5206;
+            }
+
+            .dash .reg-link .count {
+                min-width: 22px;
+                padding: 0 7px;
+                font-size: 12px;
+                line-height: 20px;
+                text-align: center;
+                color: #fff;
+                background: var(--d-amber);
+                border-radius: 999px;
+            }
+
+            .dash .reg-link.cultural {
+                color: var(--d-teal);
+                background: var(--d-teal-soft);
+                border-color: #bfe6ea;
+            }
+
+                .dash .reg-link.cultural:hover {
+                    background: #cdeef1;
+                    color: #0b6670;
+                }
+
+                .dash .reg-link.cultural .count {
+                    background: var(--d-teal);
+                }
+
+        .dash .reg-none {
+            font-size: 13px;
+            color: #98a1b5;
+        }
+
+        .dash .event-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 140px;
+        }
+
+        .dash .event-dot {
+            width: 8px;
+            height: 8px;
+            min-width: 8px;
+            border-radius: 50%;
+            background: var(--d-violet);
+        }
+
+        .dash .date-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            align-items: flex-start;
+        }
+
+        /* ---------- Empty state ---------- */
+        .dash .empty-state {
+            text-align: center;
+            padding: 36px 16px !important;
+            color: #98a1b5;
+            font-size: 14px;
+        }
+
+            .dash .empty-state i {
+                display: block;
+                font-size: 28px;
+                margin-bottom: 6px;
+                color: #c4cadb;
+            }
+
+        /* ---------- Quick links ---------- */
+        .dash .quick-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 14px;
+            padding: 20px;
+        }
+
+        .dash .quick-link-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            background: #fff;
+            border: 1px solid var(--d-line);
+            border-radius: 12px;
+            transition: border-color .15s ease, background-color .15s ease;
+        }
+
+            .dash .quick-link-item:hover {
+                border-color: var(--d-blue-line);
+                background: #fafbff;
+            }
+
+        .dash .quick-link-icon {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+        }
+
+        .dash .quick-link-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.25;
+            min-width: 0;
+        }
+
+        .dash .quick-link-name {
+            font-size: 13.5px;
+            color: var(--d-muted);
+            font-weight: 500;
+        }
+
+        .dash .quick-link-count {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--d-ink);
+        }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 991px) {
+        .dash .stat-strip {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .dash .stat-item:nth-child(2) {
+            border-right: 0;
+        }
+
+        .dash .stat-item:nth-child(-n+2) {
+            border-bottom: 1px solid var(--d-line);
+        }
+    }
+
+    @@media (max-width: 575px) {
+        .dash .stat-strip {
+            grid-template-columns: 1fr;
+        }
+
+        .dash .stat-item {
+            border-right: 0;
+            border-bottom: 1px solid var(--d-line);
+        }
+
+            .dash .stat-item:last-child {
+                border-bottom: 0;
+            }
+
+        .dash .section-header {
+            flex-wrap: wrap;
+        }
+
+        .dash .hero {
+            padding: 16px;
+        }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .dash * {
+            transition: none !important;
+        }
+    }
+
+    /* =========================================================
+               Colour layer v2: flat soft colours, solid icon chips
+               ========================================================= */
+    body {
+        background: #f2f5fb;
+    }
+
+    /* Overview strip: flat tints, solid icons */
+    .dash .stat-strip {
+        overflow: hidden;
+    }
+
+    .dash .stat-item.si-green {
+        background: #f3fbf7;
+    }
+
+    .dash .stat-item.si-rose {
+        background: #fff6f4;
+    }
+
+    .dash .stat-item.si-blue {
+        background: #f4f7ff;
+    }
+
+    .dash .stat-item.si-amber {
+        background: #fffaf1;
+    }
+
+    .dash .si-green .stat-icon {
+        background: #1f8f55;
+        color: #fff;
+    }
+
+    .dash .si-rose .stat-icon {
+        background: #d9594a;
+        color: #fff;
+    }
+
+    .dash .si-blue .stat-icon {
+        background: #3d5bd9;
+        color: #fff;
+    }
+
+    .dash .si-amber .stat-icon {
+        background: #e08a2e;
+        color: #fff;
+    }
+
+    /* Cards: clean outline, no curved top edge */
+    .dash .section-card {
+        border-top-width: 1px;
+    }
+
+    /* Section headers: one flat soft colour each */
+    .dash .section-header.hd-blue {
+        background: #dfe9ff;
+        border-bottom: 1px solid #c9d9fb;
+    }
+
+    .dash .section-header.hd-green {
+        background: #d9f1e4;
+        border-bottom: 1px solid #bfe4cf;
+    }
+
+    .dash .section-header.hd-violet {
+        background: #e8e0ff;
+        border-bottom: 1px solid #d6caf7;
+    }
+
+    .dash .section-header.hd-amber {
+        background: #ffecd0;
+        border-bottom: 1px solid #fbd9a6;
+    }
+
+    .dash .section-header.hd-teal {
+        background: #d5f0f3;
+        border-bottom: 1px solid #b8e2e7;
+    }
+
+    .dash .hd-blue .section-title {
+        color: #22377f;
+    }
+
+    .dash .hd-green .section-title {
+        color: #14573a;
+    }
+
+    .dash .hd-violet .section-title {
+        color: #3f2a8a;
+    }
+
+    .dash .hd-amber .section-title {
+        color: #7a4306;
+    }
+
+    .dash .hd-teal .section-title {
+        color: #0b5560;
+    }
+
+    .dash .hd-blue .section-sub {
+        color: #566aa8;
+    }
+
+    .dash .hd-green .section-sub {
+        color: #4a7d63;
+    }
+
+    .dash .hd-violet .section-sub {
+        color: #7662b3;
+    }
+
+    .dash .hd-amber .section-sub {
+        color: #a07037;
+    }
+
+    .dash .hd-teal .section-sub {
+        color: #4a8a93;
+    }
+
+    /* Solid icon chips */
+    .dash .section-header .section-icon {
+        box-shadow: none;
+        color: #fff;
+    }
+
+    .dash .section-header.hd-blue .section-icon {
+        background: #3d5bd9;
+    }
+
+    .dash .section-header.hd-green .section-icon {
+        background: #1f8f55;
+    }
+
+    .dash .section-header.hd-violet .section-icon {
+        background: #6b4bc4;
+    }
+
+    .dash .section-header.hd-amber .section-icon {
+        background: #d9822b;
+    }
+
+    .dash .section-header.hd-teal .section-icon {
+        background: #0f9aa8;
+    }
+
+    .dash .section-header .btn-soft {
+        background: #fff;
+    }
+
+        .dash .section-header .btn-soft:hover {
+            background: #f2f6ff;
+        }
+
+    /* Table headings: lighter than the header above, with a coloured rule */
+    .dash .th-blue thead th {
+        background: #f4f7ff !important;
+        color: #2f4bc2 !important;
+        border-bottom: 2px solid #cfdcfb;
+    }
+
+    .dash .th-green thead th {
+        background: #f2faf6 !important;
+        color: #17784a !important;
+        border-bottom: 2px solid #bfe4cf;
+    }
+
+    .dash .th-violet thead th {
+        background: #f6f3ff !important;
+        color: #5a3fb0 !important;
+        border-bottom: 2px solid #d6caf7;
+    }
+
+    /* Rows */
+    .dash .table tbody tr:nth-child(even) {
+        background: #fbfcff;
+    }
+
+    .dash .table tbody tr:hover {
+        background: #f0f5ff;
+    }
+
+    /* Footers */
+    .dash .ac-blue .section-foot {
+        background: #f6f8ff;
+    }
+
+    .dash .ac-green .section-foot {
+        background: #f4fbf7;
+    }
+
+    .dash .ac-violet .section-foot {
+        background: #f8f6ff;
+    }
+
+    /* Insight bodies stay white so the charts read clearly */
+    .dash .insight-body .bar-track {
+        background: #eef1f8;
+    }
+
+    /* Quick links: light flat tile + solid icon */
+    .dash .quick-links-grid {
+        background: #fff;
+    }
+
+    .dash .tile-tone-blue {
+        background: #f4f7ff;
+        border-color: #d6e1ff;
+    }
+
+    .dash .tile-tone-green {
+        background: #f3fbf7;
+        border-color: #c9eadb;
+    }
+
+    .dash .tile-tone-amber {
+        background: #fffaf1;
+        border-color: #fbe0b4;
+    }
+
+    .dash .tile-tone-violet {
+        background: #f8f6ff;
+        border-color: #ddd2fa;
+    }
+
+    .dash .tile-tone-teal {
+        background: #f2fafb;
+        border-color: #c2e6ea;
+    }
+
+    .dash .tile-tone-rose {
+        background: #fff6f4;
+        border-color: #fbd3cc;
+    }
+
+    .dash .quick-link-item .quick-link-icon {
+        box-shadow: none;
+        color: #fff;
+    }
+
+    .dash .tile-tone-blue .quick-link-icon {
+        background: #3d5bd9;
+    }
+
+    .dash .tile-tone-green .quick-link-icon {
+        background: #1f8f55;
+    }
+
+    .dash .tile-tone-amber .quick-link-icon {
+        background: #d9822b;
+    }
+
+    .dash .tile-tone-violet .quick-link-icon {
+        background: #6b4bc4;
+    }
+
+    .dash .tile-tone-teal .quick-link-icon {
+        background: #0f9aa8;
+    }
+
+    .dash .tile-tone-rose .quick-link-icon {
+        background: #d9594a;
+    }
+</style>
+
+<div class="dash">
+
+    <!-- Overview strip -->
+    <div class="stat-strip">
+        <div class="stat-item si-green">
+            <div class="stat-icon tone-green"><i class="bi bi-person-check-fill"></i></div>
+            <div>
+                <div class="stat-label">Active members</div>
+                <h4 class="stat-value">@MembersActiveCount</h4>
+                <div class="stat-foot">$@MembersActiveSumAmount.ToString("N2") total</div>
+            </div>
+        </div>
+        <div class="stat-item si-rose">
+            <div class="stat-icon tone-rose"><i class="bi bi-person-dash-fill"></i></div>
+            <div>
+                <div class="stat-label">Inactive members</div>
+                <h4 class="stat-value">@MembersInActiveCount</h4>
+                <div class="stat-foot">$@MembersInActiveSumAmount.ToString("N2") total</div>
+            </div>
+        </div>
+        <div class="stat-item si-blue">
+            <div class="stat-icon tone-blue"><i class="bi bi-calendar-week"></i></div>
+            <div>
+                <div class="stat-label">Donations this week</div>
+                <h4 class="stat-value">$@DonationsWeeklyAmount.ToString("N2")</h4>
+                <div class="stat-foot">@DonationsWeeklyCount @(DonationsWeeklyCount == 1 ? "donation" : "donations")</div>
+            </div>
+        </div>
+        <div class="stat-item si-amber">
+            <div class="stat-icon tone-amber"><i class="bi bi-calendar3"></i></div>
+            <div>
+                <div class="stat-label">Donations this month</div>
+                <h4 class="stat-value">$@DonationsMonthlyAmount.ToString("N2")</h4>
+                <div class="stat-foot">@DonationsMonthlyCount @(DonationsMonthlyCount == 1 ? "donation" : "donations")</div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Members (full width) -->
+    <div class="section-card mb-4 ac-blue">
+        <div class="section-header hd-blue">
+            <div class="section-icon tone-blue"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <h5 class="section-title">Members</h5>
+                <div class="section-sub">Latest membership orders</div>
+            </div>
+            <a href="@Url.Action("Index", "Members", new { mid = 10 })" class="btn-soft">
+                <i class="bi bi-grid-fill"></i> <span>View all members</span>
+            </a>
+        </div>
+
+        <div class="section-body">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 th-blue">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Membership type</th>
+                            <th>Payment</th>
+                            <th>Price</th>
+                            <th>Order date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (lstactiveMembers.Count != 0)
+                        {
+                            foreach (var item in lstactiveMembers)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (item.MemberSkils != null && item.MemberSkils != "")
+                                        {
+                                            <span class="id-chip">@item.MemberSkils</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="reg-none">--</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="person">
+                                            <h6 class="person-name">@item.FirstName @item.LastName</h6>
+                                        </div>
+                                    </td>
+                                    <td><a class="mail-link" href="mailto:@item.Email">@item.Email</a></td>
+                                    <td><span class="type-pill">@item.MembershipType</span></td>
+                                    <td>
+                                        @{
+                                            var payStatus = item.objMembershipOrder.PaymentStatus == null || item.objMembershipOrder.PaymentStatus == "" ? "N/A" : item.objMembershipOrder.PaymentStatus;
+                                        }
+                                        <span class="pill @PayClass(payStatus)">@payStatus</span>
+                                    </td>
+                                    <td class="amount">$@(item.objMembershipOrder.Amount == 0 ? "0.00" : item.objMembershipOrder.Amount.ToString("N2"))</td>
+                                    <td class="date-text">@(item.objMembershipOrder.OrderDate == DateTime.MinValue ? "N/A" : item.objMembershipOrder.OrderDate.ToAppDate())</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="empty-state"><i class="bi bi-inbox"></i>No members found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="section-foot">Showing the latest @lstactiveMembers.Count @(lstactiveMembers.Count == 1 ? "order" : "orders"). Use View all members for the full list.</div>
+    </div>
+
+    <!-- Donations + Events side by side -->
+    <div class="row g-4 align-items-stretch mb-4">
+        <div class="col-12 col-xl-6 d-flex">
+            <div class="section-card w-100 ac-green">
+                <div class="section-header hd-green">
+                    <div class="section-icon tone-green"><i class="bi bi-heart-fill"></i></div>
+                    <div>
+                        <h5 class="section-title">Donations</h5>
+                        <div class="section-sub">Most recent contributions</div>
+                    </div>
+                    <a href="@Url.Action("Index", "ServiceDonations")" class="btn-soft">
+                        <i class="bi bi-grid-fill"></i> <span>View all</span>
+                    </a>
+                </div>
+
+                <div class="section-body">
+                    <div class="table-responsive scroll-y">
+                        <table class="table align-middle mb-0 th-green">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Cause</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (lstServiceDonations.Count != 0)
+                                {
+                                    foreach (var item in lstServiceDonations)
+                                    {
+                                        <tr>
+                                            <td><span class="id-chip">@item.ServiceDonationId</span></td>
+                                            <td>
+                                                <div class="person">
+                                                    <h6 class="person-name">@item.FirstName @item.LastName</h6>
+                                                </div>
+                                            </td>
+                                            <td><span class="cause-pill">@item.DonationCause</span></td>
+                                            <td class="amount">$@Math.Round(item.Amount, 2).ToString("N2")</td>
+                                            <td class="date-text">@(item.OrderDate == DateTime.MinValue ? item.UpdatedDate.ToAppDate() : item.OrderDate.ToAppDate())</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="empty-state"><i class="bi bi-inbox"></i>No donations found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="section-foot">Showing the latest @lstServiceDonations.Count @(lstServiceDonations.Count == 1 ? "donation" : "donations").</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6 d-flex">
+            <div class="section-card w-100 ac-violet">
+                <div class="section-header hd-violet">
+                    <div class="section-icon tone-violet"><i class="bi bi-calendar-event-fill"></i></div>
+                    <div>
+                        <h5 class="section-title">Current and upcoming events</h5>
+                        <div class="section-sub">Registrations at a glance</div>
+                    </div>
+                    <a href="@Url.Action("Index", "Events", new { EventType = "upcoming", mid = 6 })" class="btn-soft">
+                        <i class="bi bi-grid-fill"></i> <span>View all</span>
+                    </a>
+                </div>
+
+                <div class="section-body">
+                    <div class="table-responsive scroll-y">
+                        <table class="table align-middle mb-0 th-violet">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Event</th>
+                                    <th>Start date</th>
+                                    <th>Registrations</th>
+                                    <th>Cultural</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (lstEvents.Count != 0)
+                                {
+                                    Int64 i = 1;
+                                    foreach (var item in lstEvents)
+                                    {
+                                        <tr>
+                                            <td><span class="id-chip">@i</span></td>
+                                            <td>
+                                                <div class="event-name">
+                                                    <span class="event-dot"></span>
+                                                    <h6 class="person-name">@item.EventName</h6>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="date-stack">
+                                                    <span class="date-text">@item.StartDate.ToAppDate()</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @if (item.IsRegistration == true)
+                                                {
+                                                    <a class="reg-link" href="@Url.Action("Index", "EventRegistrations", new { EventId = item.EventId, EventName = item.EventName, mid = 6 })">
+                                                        Registrations <span class="count">@item.UsersCount</span>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="reg-none">No registrations</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (item.IsCulturalRegistration == true)
+                                                {
+                                                    <a class="reg-link cultural" href="@Url.Action("Index", "CulturalRegistrations", new { EventId = item.EventId, EventName = item.EventName, mid = ViewBag.Mid })">
+                                                        Cultural <span class="count">@item.CUsersCount</span>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="reg-none">No registrations</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        i++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="empty-state"><i class="bi bi-calendar-x"></i>No events found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="section-foot">@lstEvents.Count @(lstEvents.Count == 1 ? "event" : "events") current or upcoming.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="section-card ac-teal">
+        <div class="section-header hd-teal">
+            <div class="section-icon tone-teal"><i class="bi bi-link-45deg"></i></div>
+            <div>
+                <h5 class="section-title">Quick links</h5>
+                <div class="section-sub">Record counts across the system</div>
+            </div>
+        </div>
+        @if (lstTableCounts.Count != 0)
+        {
+            string[] tones = { "tone-blue", "tone-green", "tone-amber", "tone-violet", "tone-teal", "tone-rose" };
+            int qi = 0;
+            <div class="quick-links-grid">
+                @foreach (var item in lstTableCounts)
+                {
+                    <div class="quick-link-item tile-@tones[qi % tones.Length]">
+                        <div class="quick-link-icon @tones[qi % tones.Length]"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+                        <div class="quick-link-text">
+                            <span class="quick-link-name">@item.TableName</span>
+                            <span class="quick-link-count">@item.TotalCount</span>
+                        </div>
+                    </div>
+                    qi++;
+                }
+            </div>
+        }
+        else
+        {
+            <p class="empty-state mb-0"><i class="bi bi-inbox"></i>No quick links found.</p>
+        }
+    </div>
+
+</div>

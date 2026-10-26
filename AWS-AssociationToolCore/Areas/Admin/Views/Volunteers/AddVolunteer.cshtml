@@ -1,0 +1,446 @@
+﻿@{
+    ViewBag.Title = "AddVolunteer";
+    ViewBag.Pageheading = "Add Volunteer";
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+
+    List<AWS_AssociationToolCore.Entities.VolunteerCategories> lstVolunteerCategory = ViewBag.lstVolunteerCategory;
+    Int64 VolunteerCategoryId = ViewBag.VolunteerCategoryId;
+    List<AWS_AssociationToolCore.Entities.Events> lstEvents = ViewBag.lstEvents;
+    Int64 EventId = ViewBag.EventId;
+
+    Int64 ChapterId = ViewBag.ChapterId;
+
+    
+
+
+    List<AWS_AssociationToolCore.Entities.Chapters> lstChapters = ViewBag.lstChapters;
+
+    List<AWS_AssociationToolCore.Entities.country> lstCountries = new List<AWS_AssociationToolCore.Entities.country>();
+    lstCountries = ViewBag.lstCountries;
+
+
+
+
+    int status = 0;
+
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+
+
+
+
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#wVolunteer, #wVolunteers').addClass('active');
+        $('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+        $('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+    });
+
+    $(document).ready(function () {
+        $("#VolunteerForm").validate({
+            rules: {
+                FirstName: "required",
+                LastName: "required",
+                Email: {
+                    required: true,
+                    email: true
+                },
+                PhoneNo: {
+                    required: true,
+                    minlength: 12
+                },
+                City: "required",
+                Country: "required",
+                State: "required",
+                ZipCode: "required",
+                VolunteerCategoryId: "required",
+            },
+            messages: {
+                FirstName: " First Name is required",
+                LastName: " Last Name is required",
+                Email: {
+                    required: "Please enter email address",
+                    email: "Please enter valid email address",
+                },
+                PhoneNo: {
+                    required: "Please enter phone number",
+                    minlength: "Please enter valid phone number",
+                },
+                City: " City is required",
+                Country: " Country is required",
+                State: " State is required",
+                ZipCode: " ZipCode is required",
+                VolunteerCategoryId: " Please Select Category",
+
+            },
+
+            errorElement: "div",
+            errorPlacement: function (error, element) {
+                // Add the `invalid-feedback` class to the error element
+                error.addClass("invalid-feedback");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+
+                // Move the error element after the fieldset element
+                if (element.closest(".input-box").length) {
+                    element.closest(".input-box").after(error);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                // Highlight the input, textarea, or select element with the `is-invalid` class
+                var $element = $(element);
+                if ($element.is('input, textarea, select')) {
+                    $element.addClass("is-invalid").removeClass("is-valid");
+                }
+
+
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                // Unhighlight the input, textarea, or select element by adding the `is-valid` class
+                var $element = $(element);
+                if ($element.is('input, textarea, select')) {
+                    $element.addClass("is-valid").removeClass("is-invalid");
+                }
+
+            },
+
+
+        });
+                  DynamicCustomFields.wireValidation('#VolunteerForm', '.dynamic-fields-row');
+                         function applyCustomFieldRules() {
+           $('#VolunteerForm .dynamic-fields-row')
+               .find('input:not([type=hidden]), select, textarea')
+               .each(function () {
+                   var $el = $(this);
+                   if (!$el.attr('name')) return;
+
+                   var $label = $el.closest('[class*="col-"]').find('label').first();
+
+                   var isRequired =
+                       $el.prop('required') ||
+                       $el.attr('data-required') === 'true' ||
+                       $el.attr('aria-required') === 'true' ||
+                       $label.find('.text-danger, .input-imp, .required').length > 0 ||
+                       $label.text().indexOf('*') !== -1;
+
+                   if (isRequired) {
+                       $el.rules('add', {
+                           required: true,
+                           messages: { required: 'This field is required' }
+                       });
+                   }
+               });
+       }
+       applyCustomFieldRules();
+
+       $(document).on('input change', '.dynamic-fields-row input, .dynamic-fields-row select, .dynamic-fields-row textarea', function () {
+           var $field = $(this);
+           if ($field.val() && $field.val().toString().trim() !== '') {
+               $field.closest('[class*="col-"]').find('.invalid-feedback, em, .help-block, .error, .text-danger:not(label span)').hide();
+               $field.removeClass('is-invalid');
+           }
+       });
+    });
+
+    
+
+    function StatesBind() {
+        var CountryID = $('#Country').val();
+        $.ajax({
+            url: '@Url.Action("GetStateByCountryID", "Volunteers")',
+            type: 'POST',
+            data: { CountryID: CountryID }, // optional data
+            datatype: "JSON",
+            success: function (result) {
+                if (result.ok) {
+                    var sb = "<option value=\"\">-- Select --</option>";
+                    States = result.data;
+                    if (States != null) {
+                        for (var i = 0; i < States.length; i++) {
+                            sb = sb + "<option value=\"" + States[i].StateID + "\">" + States[i].StateName + "</option>";
+                        }
+                    }
+                    $('#State').html(sb);
+                }
+            }
+        });
+    }
+
+    function PhoneNochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#PhoneNo').val();
+            if (ph.length == 3) { $('#PhoneNo').val(ph + '-'); }
+            if (ph.length == 7) { $('#PhoneNo').val(ph + '-'); }
+        }
+    }
+
+
+       function CategoriesBind() {
+           var ChapterId = $('#ChapterId').val();
+           
+
+        $.ajax({
+            url: '@Url.Action("VolunteerCategoriesGetChapterId", "VolunteerCategories")',
+            type: 'POST',
+            data: { ChapterId: ChapterId },
+            datatype: "JSON",
+            success: function (result) {
+                if (result.ok) {
+
+                    var lstVolunteerCategories = result.data;
+                    var sb = "<label>Volunteer Category : <span>*</span></label>";
+                    sb = sb + "<select id=\"VolunteerCategoryId\" name=\"VolunteerCategoryId\" class=\"form-control\">";
+                    sb = sb + "<option value=\"\">Select</option>";
+                    if (lstVolunteerCategories != null) {
+                        for (var i = 0; i < lstVolunteerCategories.length; i++) {
+                            sb = sb + "<option  value=\"" + lstVolunteerCategories[i].VolunteerCategoryId + "\">" + lstVolunteerCategories[i].CategoryName + "</option>";
+
+                        }
+                    }
+                    sb = sb + "</select>";
+                    $('#divVolunteerCategory').html('');
+                    $('#divVolunteerCategory').html(sb);
+                    window.asd = $('.form-control').SumoSelect({ csvDispCount: 3, selectAll: true, search: true, searchText: 'Enter here.', captionFormatAllSelected: "Yeah, OK, so everything." });
+                }
+            }
+        });
+    }
+
+
+    function PhoneNochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#PhoneNo').val();
+            if (ph.length == 3) { $('#PhoneNo').val(ph + '-'); }
+            if (ph.length == 7) { $('#PhoneNo').val(ph + '-'); }
+        }
+    }
+    function handlePaste(event) {
+        // Check if the target is the input element
+        if (event.target.id === "PhoneNo") {
+            const pastedNumber = (event.clipboardData || window.clipboardData).getData('text');
+            const formattedNumber = formatPhoneNumber(pastedNumber);
+            event.target.value = formattedNumber;
+            // Replace input value with formatted number
+            event.preventDefault();
+            // Prevent default pasting behavior
+        }
+    }
+</script>
+<script type="text/javascript" src="ckeditor/ckeditor.js"></script>
+<script type="text/javascript" src="ckfinder/ckfinder.js"></script>
+
+<div class="content">
+    @using (Html.BeginForm("AddVolunteer", "Volunteers", FormMethod.Post, new { enctype = "multipart/form-data", @id = "VolunteerForm", @name = "VolunteerForm", @novalidate = "novalidate" }))
+    {
+        <input type="hidden" name="EventId" id="EventId" />
+
+
+
+        if (objAppInfo.chapterStatus == "No")
+        {
+            <input type="hidden" value="1" name="ChapterId" id="ChapterId" />
+        }
+
+       
+
+        <input type="hidden" value="@ViewBag.mid" name="mid" id="mid" />
+        <div class="box validation">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">First Name : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="FirstName" id="FirstName" placeholder="FirstName">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Last Name : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="LastName" id="LastName" placeholder="LastName">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Email : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="Email" id="Email" placeholder="Email">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">PhoneNo : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" onkeypress="PhoneNochange(event); return Common.isNumberKey(event);" onpaste="handlePaste(event);" maxlength="12" name="PhoneNo" id="PhoneNo" placeholder="PhoneNo">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">City : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="City" id="City" placeholder="City">
+                            </div>
+                        </div>
+
+
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Country : <span class="text-danger">*</span></label>
+                                <select class="form-control" id="Country" name="Country" @* onchange="StatesBind()" *@>
+                                    <option value="">Select</option>
+                                    @if (lstCountries.Count != 0)
+                                    {
+                                        foreach (var item in lstCountries)
+                                        {
+                                             <option value="@(item.CountryID)">@(item.CountryName)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">State : <span class="text-danger">*</span></label>
+                                <select class="form-control" name="State" id="State" placeholder="State">
+                                    <option value="">Select State *</option>
+                                    <option  value="Alabama">Alabama</option>
+                                    <option  value="Alaska">Alaska</option>
+                                    <option  value="Arizona">Arizona</option>
+                                    <option  value="Arkansas">Arkansas</option>
+                                    <option  value="California">California</option>
+                                    <option  value="Colorado">Colorado</option>
+                                    <option  value="Connecticut">Connecticut</option>
+                                    <option value="Delaware">Delaware</option>
+                                    <option value="Florida">Florida</option>
+                                    <option  value="Georgia">Georgia</option>
+                                    <option value="Hawaii">Hawaii</option>
+                                    <option value="Idaho">Idaho</option>
+                                    <option  value="Illinois">Illinois</option>
+                                    <option  value="Indiana">Indiana</option>
+                                    <option  value="Iowa">Iowa</option>
+                                    <option value="Kansas">Kansas</option>
+                                    <option value="Kentucky">Kentucky</option>
+                                    <option  value="Louisiana">Louisiana</option>
+                                    <option  value="Maine">Maine</option>
+                                    <option value="Maryland">Maryland</option>
+                                    <option  value="Massachusetts">Massachusetts</option>
+                                    <option value="Michigan">Michigan</option>
+                                    <option value="Minnesota">Minnesota</option>
+                                       
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">ZipCode : <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="ZipCode" id="ZipCode" placeholder="ZipCode" maxlength="8" onkeypress="return Common.isNumberKey(event);">
+                            </div>
+                        </div>
+
+                        @if (objAppInfo.chapterStatus == "Yes")
+                        {
+                            <div class="col-lg-3 col-md-6">
+                                <div class="input-box">
+                                    <label class="form-label">Chapters : </label>
+                                   
+                                    <select class="form-control" id="ChapterId" name="ChapterId" onchange="CategoriesBind();" style="@(ChapterId != 1 ? "pointer-events:none;" : "")">
+
+                                        <option value="">-- Select --</option>
+                                        @if (lstChapters != null && lstChapters.Count != 0)
+                                        {
+                                            foreach (var item in lstChapters)
+                                            {
+                                                
+                                                <option value="@item.ChapterId" @(item.ChapterId == ChapterId ? "selected=selected" : "")>@item.ChapterName</option>
+
+
+                                            }
+                                        }
+                                    </select>
+</div>
+                            </div>
+
+                        }
+
+
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Volunteer Category : <span class="text-danger">*</span></label>
+                                <select class="single-select" name="VolunteerCategoryId" id="VolunteerCategoryId">
+                                    <option value="">-- Select --</option>
+                                    @if (lstVolunteerCategory != null && lstVolunteerCategory.Count != 0)
+                                    {
+                                        foreach (var item in lstVolunteerCategory)
+                                        {
+                                            <option value="@item.VolunteerCategoryId">@item.CategoryName (@item.VolunteerHours Hrs)</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Hours Spent : <span class="text-danger"></span></label>
+                                <input type="text" class="form-control" name="HoursSpent" id="HoursSpent" placeholder="Hours Spent" maxlength="2" onkeypress="return Common.isNumberKey(event);">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Address : </label>
+                                <textarea class="form-control" id="Address" name="Address"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Address2 : </label>
+                                <textarea class="form-control" id="Address2" name="Address2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (objAppInfo.CustomFieldStatus == "Yes")
+        {
+            var cfForm = new AWS_AssociationToolCore.BLL.CustomFields()
+            .GetDynamicForm(AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Volunteer, 0L);
+
+            if (cfForm.Fields != null && cfForm.Fields.Count > 0)
+            {
+                <div class="box validation">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row g-3 dynamic-fields-row">
+
+                                @await Component.InvokeAsync("DynamicCustomFields", new { formCode = AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Volunteer, recordId = 0L, theme = "admin" })
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        <div class="row">
+            <div class="col-lg-2 col-3 text-end ms-auto">
+                <button type="submit" class="btn btn-success px-3 " value="submit">Submit</button>
+                <a class="btn btn-primary px-3" href="@Url.Action("Index", "Volunteers", new { mid = ViewBag.mid })">Cancel</a>
+            </div>
+        </div>
+    }
+</div>
+

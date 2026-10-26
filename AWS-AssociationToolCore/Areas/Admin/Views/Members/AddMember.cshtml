@@ -1,0 +1,1181 @@
+﻿@using AWS_AssociationToolCore.BLL
+
+@{
+    ViewBag.Title = "Add Member";
+    ViewBag.Pageheading = "Add Member";
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+    var objMembers = (AWS_AssociationToolCore.Entities.Members)ViewBag.objMembers;
+    var lstMembershipType = (List<AWS_AssociationToolCore.Entities.MembershipTypes>)objMembers.lstMembershipType;
+    var lstPaymentMethod = (List<AWS_AssociationToolCore.Entities.PaymentMethods>)objMembers.lstPaymentMethod;
+    var lstPaymentStatus = (List<AWS_AssociationToolCore.Entities.PaymentStatus>)objMembers.lstPaymentStatus;
+
+    List<AWS_AssociationToolCore.Entities.Chapters> lstChapters = ViewBag.lstChapters;
+
+    int status = 0;
+
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+
+    Int64 ChapterId = ViewBag.ChapterId;
+
+}
+@*<script src="Scripts/Admin/jquery.validate.js"></script>*@
+@using (Html.BeginForm("AddMember", "Members", FormMethod.Post, new { enctype = "multipart/form-data", @id = "VolunteerForm", @name = "VolunteerForm", @novalidate = "novalidate" }))
+{
+    <input type="hidden" value="" id="MemberAmount" name="MemberAmount" />
+    <input type="hidden" value="" id="TMemberAmount" name="TMemberAmount" />
+    <input type="hidden" id="Amount" name="Amount" value="" />
+
+
+    if (objAppInfo.chapterStatus == "No")
+    {
+        <input type="hidden" value="1" name="ChapterId" id="ChapterId" />
+    }
+
+    @*<input type="hidden" id="ChapterId" name="ChapterId" value="1" />*@
+    <input type="hidden" id="mid" name="mid" value="@ViewBag.mid" />
+    <input type="hidden" id="type" name="type" value="@ViewBag.type" />
+    <div class="card">
+        <div class="card-body">
+
+            <div class="box validation">
+                <div class="box-header">
+                    <h3 class="box-title dis-in"> Personal Details</h3>
+                </div>
+                <div class="box-body">
+                    <div class="row  g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">First Name   <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="FirstName" name="FirstName" placeholder="First Name" onkeypress="return Common.isChar(event)">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Last Name   <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="LastName" name="LastName" placeholder="Last Name" onkeypress="return Common.isChar(event)">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Email  <span class="text-danger"></span></label>
+                                <input type="text" class="form-control" id="Email" name="Email" placeholder="Email">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Mobile Phone <span class="text-danger"></span></label>
+                                <input type="text" class="form-control" id="MobilePhone" name="MobilePhone" onkeypress="PhoneNochange(event); return Common.isNumberKey(event);" maxlength="12" placeholder="Mobile Phone" onpaste="handlePaste(event);" autocomplete="off" />
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">State  <span class="text-danger"></span></label>
+                                <select class="single-select" name="State" id="State" type="text">
+                                    <option value="" selected="selected">--Select--</option>
+
+                                    <option value="Alabama">Alabama</option>
+                                    <option value="Alaska">Alaska</option>
+                                    <option value="Arizona">Arizona</option>
+                                    <option value="Arkansas">Arkansas</option>
+                                    <option value="California">California</option>
+                                    <option value="Colorado">Colorado</option>
+                                    <option value="Connecticut">Connecticut</option>
+                                    <option value="Delaware">Delaware</option>
+                                    <option value="Florida">Florida</option>
+                                    <option value="Georgia">Georgia</option>
+                                    <option value="Hawaii">Hawaii</option>
+                                    <option value="Idaho">Idaho</option>
+                                    <option value="Illinois">Illinois</option>
+                                    <option value="Indiana">Indiana</option>
+                                    <option value="Iowa">Iowa</option>
+                                    <option value="Kansas">Kansas</option>
+                                    <option value="Kentucky">Kentucky</option>
+                                    <option value="Louisiana">Louisiana</option>
+                                    <option value="Maine">Maine</option>
+                                    <option value="Maryland">Maryland</option>
+                                    <option value="Massachusetts">Massachusetts</option>
+                                    <option value="Michigan">Michigan</option>
+                                    <option value="Minnesota">Minnesota</option>
+                                    <option value="Mississippi">Mississippi</option>
+                                    <option value="Missouri">Missouri</option>
+                                    <option value="Montana">Montana</option>
+                                    <option value="Nebraska">Nebraska</option>
+                                    <option value="Nevada">Nevada</option>
+                                    <option value="New Hampshire">New Hampshire</option>
+                                    <option value="New Jersey">New Jersey</option>
+                                    <option value="New Mexico">New Mexico</option>
+                                    <option value="New York">New York</option>
+                                    <option value="North Carolina">North Carolina</option>
+                                    <option value="North Dakota">North Dakota</option>
+                                    <option value="Ohio">Ohio</option>
+                                    <option value="Oklahoma">Oklahoma</option>
+                                    <option value="Oregon">Oregon</option>
+                                    <option value="Pennsylvania">Pennsylvania</option>
+                                    <option value="Rhode Island">Rhode Island</option>
+                                    <option value="South Carolina">South Carolina</option>
+                                    <option value="South Dakota">South Dakota</option>
+                                    <option value="Tennessee">Tennessee</option>
+                                    <option value="Texas">Texas</option>
+                                    <option value="Utah">Utah</option>
+                                    <option value="Vermont">Vermont</option>
+                                    <option value="Virginia">Virginia</option>
+                                    <option value="Washington">Washington</option>
+                                    <option value="West Virginia">West Virginia</option>
+                                    <option value="Wisconsin">Wisconsin</option>
+                                    <option value="Wyoming">Wyoming</option>
+                                
+                                </select>
+
+                            </div>
+                        </div>
+
+
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">City </label>
+                                <input type="text" id="City" class="form-control" name="City" placeholder="City">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">ZipCode </label>
+                                <input type="text" id="ZipCode" class="form-control" name="ZipCode" placeholder="ZipCode" onkeypress="return Common.isNumberKey(event);" maxlength="8">
+                            </div>
+                        </div>
+
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Marital Status <span class="text-danger">*</span></label>
+                                <select class="single-select" name="MaritalStatus" id="MaritalStatus" onchange="bindspouse()" placeholder="Marital Status">
+                                    <option value="">-- Select --</option>
+                                    <option value="Single">Single</option>
+                                    <option value="Married">Married</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Gender <span class="text-danger">*</span></label>
+                                <select class="single-select" name="gender" id="gender" placeholder="Gender">
+                                    <option value="">-- Select --</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        @if (objAppInfo.chapterStatus == "Yes")
+                        {
+                            <div class="col-lg-3 col-md-6">
+                                <div class="input-box">
+                                    <label class="form-label">Chapters  <span class="text-danger"></span></label>
+
+
+                                    <select class="form-control" id="ChapterId" name="ChapterId" style="@(ChapterId != 1 ? "pointer-events:none;" : "")">
+
+                                        <option value="">-- Select --</option>
+                                        @if (lstChapters != null && lstChapters.Count != 0)
+                                        {
+                                            foreach (var item in lstChapters)
+                                            {
+                                    <option @(item.ChapterId == ChapterId ? "selected=selected" : "") value="@item.ChapterId">@item.ChapterName</option>
+                                            }
+                                        }
+                                    </select>
+
+                                </div>
+                            </div>
+                        }
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Address-1</label>
+                                <textarea type="text" id="Address" class="form-control" name="Address" placeholder="Address"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Address-2</label>
+                                <textarea type="text" id="Address2" class="form-control" name="Address2" placeholder="Address2"></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    @if (objAppInfo.CustomFieldStatus == "Yes")
+    {
+        var cfForm = new AWS_AssociationToolCore.BLL.CustomFields()
+            .GetDynamicForm(AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Membership, 0L);
+
+        if (cfForm.Fields != null && cfForm.Fields.Count > 0)
+        {
+            <div class="box validation">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-3 dynamic-fields-row">
+                            @* --- Custom Fields (Admin-configured, dynamic) --- *@
+
+                            @await Component.InvokeAsync("DynamicCustomFields", new { formCode = AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Membership, recordId = 0L, theme = "admin" })
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    <div class="card">
+        <div class="card-body">
+
+            <div class="box validation">
+                <div class="box-header">
+                    <h3 class="box-title dis-in"> Spouse Details </h3>
+                </div>
+                <div class="box-body">
+                    <div class="row  g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">First Name </label>
+                                <input type="text" class="form-control" id="SpouseFirstName" name="SpouseFirstName" placeholder="Spouse First Name">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Last Name </label>
+                                <input type="text" class="form-control" id="SpouseLastName" name="SpouseLastName" placeholder="Spouse Last Name">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Email</label>
+                                <input type="text" class="form-control" id="SpouseEmail" name="SpouseEmail" placeholder="Spouse Email">
+                            </div>
+                        </div>
+
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Phone No </label>
+                                <input type="text" class="form-control" onkeypress="SpousePhoneNochange(event); return Common.isNumberKey(event);" id="SpouseCell" maxlength="12" name="SpouseCell" placeholder="Spouse Phone No" onpaste="handlePastes(event);" autocomplete="off" />
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+
+            <div class="box validation">
+                <div class="box-header">
+                    <h3 class="box-title dis-in"> Latest Order Details </h3>
+                </div>
+                <div class="box-body">
+                    <div class="row  g-3">
+                       
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">
+                                    Membership Type : <span class="text-danger">*</span>
+                                </label>
+
+                                <select class="single-select" name="MembershipTypeId" id="MembershipTypeId" type="text" onchange="getamount();">
+                                    @if (lstMembershipType != null)
+                                    {
+                                        <option value="">Select</option>
+                                        foreach (var item in lstMembershipType)
+                                        {
+                                            <option value="@item.MembershipTypeId">@item.MembershipType</option>
+                                        }
+                                    }
+
+
+                                </select>
+
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Expiry Date </label>
+                                <input type="text" class="form-control" placeholder="@AWS_AssociationToolCore.BLL.AppDate.Key"  id="ExpiryDate" name="ExpiryDate" readonly="true">
+
+
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+
+                            <div class="input-box">
+                                <div>
+                                    <label>&nbsp;</label>
+                                </div>
+                                <label>Amount :</label>
+                                $<span id="payamount"></span>
+
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Payment Method</label>
+
+                                <select class="single-select" name="PaymentMethodId" id="PaymentMethodId" type="text" onchange="PaymentMethodBind();">
+                                    @if (lstPaymentMethod != null)
+                                    {
+                                        <option value="">Select</option>
+                                        foreach (var item in lstPaymentMethod)
+                                        {
+                                            <option value="@item.PaymentMethodId">@item.PaymentMethod</option>
+                                        }
+                                    }
+
+
+                                </select>
+
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6" id="ChequeHolderNamehide">
+                            <div class="input-box">
+                                <label class="form-label">Handed the cash/cheque to - Name of the :</label>
+                                <input type="text" class="form-control" id="ChequeHolderName" name="ChequeHolderName">
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-6" id="ZellePartnerNamehide">
+                            <div class="input-box">
+                                <label class="form-label">Zelle Person Name </label>
+                                <input type="text" class="form-control" id="ZellePartnerName" name="ZellePartnerName">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Transaction Id </label>
+                                <input type="text" class="form-control" id="TransactionId" name="TransactionId">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Payment Status</label>
+
+                                <select class="single-select" name="PaymentStatusId" id="PaymentStatusId" type="text">
+                                    @if (lstPaymentStatus != null)
+                                    {
+                                        <option value="">Select</option>
+                                        foreach (var item in lstPaymentStatus)
+                                        {
+                                            <option value="@item.PaymentStatusId">@item.PaymentStatus1</option>
+                                        }
+                                    }
+
+
+                                </select>
+                            </div>
+                        </div>
+                       
+
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Bank Name  :</label>
+                                <input type="text" class="form-control" id="BankName" name="BankName">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Cheque Date :</label>
+                                <input type="text" class="form-control" placeholder="@AWS_AssociationToolCore.BLL.AppDate.Key" id="ChequeDate" name="ChequeDate">
+                            </div>
+                        </div>
+
+
+                        <div class="col-lg-6 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">User Comments</label>
+                                <textarea type="text" id="UserComment" class="form-control" name="UserComment" placeholder="UserComment"></textarea>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 col-md-6">
+                            <div class="input-box">
+                                <label class="form-label">Admin Comments</label>
+                                <textarea type="text" class="form-control" id="AdminComment" name="AdminComment" placeholder="AdminComment"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3 col-3 text-end ms-auto">
+            <button type="submit" class="btn btn-success px-3 " value="submit"> Submit</button>
+            <a class="btn btn-primary px-3" href="@Url.Action("Index", "Members", new { mid = ViewBag.mid })">Cancel</a>
+        </div>
+    </div>
+
+}
+
+<script type="text/javascript">
+            var appDateFormat = '@AWS_AssociationToolCore.BLL.AppDate.JqFormat';
+
+    $(document).ready(function () {
+
+
+        $(function () {
+            $("#ChequeDate").datetimepicker({
+
+                changeMonth: true,
+                changeYear: true,
+                showButtonPanel: true,
+                dateFormat: appDateFormat
+            });
+        });
+
+
+
+    });
+    function calculateExpiryDate(startDate, months) {
+        // Create a new Date object based on the provided start date
+        const startDateObj = new Date(startDate);
+
+        // Add the specified number of months to the start date
+        startDateObj.setMonth(startDateObj.getMonth() + months);
+
+        // Return the calculated expiry date
+        return startDateObj;
+    }
+
+
+
+
+
+    $(document).ready(function () {
+        $('#ChequeHolderNamehide').hide()
+        $('#ZellePartnerNamehide').hide()
+        $("#BannerUrl").change(function () {
+            validateBannerUrl();
+        });
+
+        function validateBannerUrl() {
+            $("#FormWebBanners").validate().resetForm();
+            $("#FormWebBanners").validate().element("#BannerUrl");
+        }
+
+        $.validator.addMethod("validImageExtension", function (value, element) {
+            if (element.files && element.files.length > 0) {
+                var allowedExtensions = ["jpg", "png", "gif", "jpeg"];
+                var fileName = element.files[0].name;
+                var extension = fileName.split('.').pop().toLowerCase();
+                return $.inArray(extension, allowedExtensions) !== -1;
+            }
+            return true;
+        }, "Only allowed extensions are: jpg, png, gif, jpeg");
+
+
+
+
+        $('.modal').on('hidden.bs.modal', function () {
+            // Reset form fields
+            $('#FormWebBanners')[0].reset();
+
+            // Reset form validations
+            validateForm.resetForm();
+
+            // Clear validation classes
+            $('.modal').find('.error').removeClass('is-valid is-invalid');
+            $('.modal').find('.form-control').removeClass('is-valid is-invalid');
+        });
+    });
+
+
+
+    function getamount() {
+        var membershipid = $('#MembershipTypeId').val();
+        $.ajax({
+            url: '@Url.Action("EditMembershipTypes", "MembershipTypes")',
+            type: 'POST',
+            data: { MembershipTypeId: membershipid },
+            datatype: "JSON",
+            success: function (result) {
+                if (result.ok) {
+                    var objMembershipType = result.data;
+                    $('#payamount').html(objMembershipType.Price);
+                    $('#MemberAmount').val(objMembershipType.Price);
+                    $('#TMemberAmount').val(objMembershipType.Price);
+                    $('#total').html(objMembershipType.Price);
+                    if (objMembershipType.Validity != 0) {
+                        const startDate = new Date(); // current date
+
+                        const formattedDate = startDate.toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'numeric',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: 'numeric',
+                            second: 'numeric',
+                            hour12: true
+                        });
+
+                        const monthsToAdd = objMembershipType.Validity;
+                        const expiryDate = calculateExpiryDate(formattedDate, monthsToAdd);
+                        $('#ExpiryDate').val(expiryDate.ToAppDate());
+
+                    }
+                    else {
+                        $('#ExpiryDate').val('Life Time');
+
+                    }
+
+                    //if (Common.ConvertDate(objMembershipType.Validity) != '1/1/1') {
+                    //    var d = new Date();
+                    //    d.setMonth((d.getMonth()) + objMembershipType.Validity);
+                    //    $('#ExpiryDate').val(Common.ConvertDate(objMembershipType.Validity));
+                    //} else { $('#ExpiryDate').val('Life Time'); }
+                }
+                else {
+                    alert(result.data);
+                }
+            }
+        });
+    }
+    function PaymentMethodBind() {
+
+        var PaymentMethod = $('#PaymentMethodId').val();
+        if (PaymentMethod == 3) {
+            $('#ChequeHolderNamehide').show()
+            $('#ZellePartnerNamehide').hide()
+        }
+        else if (PaymentMethod == 6) {
+            $('#ChequeHolderNamehide').hide()
+            $('#ZellePartnerNamehide').show()
+        }
+        else {
+            $('#ChequeHolderNamehide').hide()
+            $('#ZellePartnerNamehide').hide()
+        }
+    }
+</script>
+<script type="text/javascript">
+    function addRow() {
+
+        var table = document.getElementById("childinfo");
+
+        var rowCount = table.rows.length;
+        var row = table.insertRow(rowCount);
+        row.id = "child-"+rowCount;
+
+        var cell1 = row.insertCell(0);
+        var element1 = document.createElement("input");
+        element1.type = "text";
+        element1.name = "[" + (rowCount - 1) + "].FirstName";
+        element1.id = "FirstName-" + (rowCount - 1);
+        element1.className = "form-control";
+        cell1.appendChild(element1);
+
+        var cell2 = row.insertCell(1);
+        var element2 = document.createElement("input");
+        element2.type = "text";
+        element2.name = "[" + (rowCount - 1) + "].Age";
+        element2.id = "Age-" + (rowCount - 1);
+        element2.className = "form-control";
+        cell2.appendChild(element2);
+
+
+        var cell3 = row.insertCell(2);
+        var element3 = document.createElement("select");
+        element3.name = "[" + (rowCount - 1) + "].LastName";
+        element3.id = "LastName-" + (rowCount - 1);
+        element3.className = "form-control";
+        element3.innerHTML = "<option value=\"\">-- Select --</option><option value=\"Male\">Male</option><option value=\"FeMale\">FeMale</option>";
+        cell3.appendChild(element3);
+
+        var cell4 = row.insertCell(3);
+        var element4 = document.createElement("input");
+        element4.type = "text";
+        element4.name = "[" + (rowCount - 1) + "].Email";
+        element4.id = "Email-" + (rowCount - 1);
+        element4.className = "form-control";
+        cell4.appendChild(element4);
+
+        //var cell5 = row.insertCell(4);
+        //var element5 = document.createElement("input");
+        //element5.type = "text";
+        //element5.name = "[" + (rowCount - 1) + "].Relationship";
+        //element5.id = "Relationship-" + (rowCount - 1);
+        //element5.className = "form-control";
+        //cell5.appendChild(element5);
+
+
+        var cell5 = row.insertCell(4);
+        cell5.innerHTML = '<a onclick="javascript:deleteRow(' + rowCount + ')" class="btn darkgray-text"> Delete</a>';
+        $('#hdnRowCount').val(rowCount);
+    }
+
+    function addRow1() {
+
+        var table = document.getElementById("masterpoojadates");
+
+        var rowCount = table.rows.length;
+        var row = table.insertRow(rowCount);
+        row.id = rowCount;
+
+        var cell1 = row.insertCell(0);
+        var element1 = document.createElement("input");
+        element1.type = "text";
+        element1.name = "[" + (rowCount - 1) + "].PoojaDate";
+        element1.id = "PoojaDate-" + (rowCount - 1);
+        element1.className = "form-control date1" + (rowCount - 1);
+        cell1.appendChild(element1);
+        $(".date1" + (rowCount - 1)).datepicker({ changeMonth: true, changeYear: true, yearRange: "-90:+0", altField: '.date1' + (rowCount - 1), altFormat: 'mm/dd/yy' });
+
+        var cell1 = row.insertCell(1);
+        cell1.innerHTML = '<a onclick="javascript:deleteRow1(' + rowCount + ')" class="btn darkgray-text"><img alt="Delete" title="Delete" src="Content/Admin/images/delete.gif" class="margin-top-5" /> Delete</a>';
+
+        $('#hdnRowCount').val(rowCount);
+    }
+
+    function formatPhoneNumber(number) {
+        // Remove any non-numeric characters
+        const cleanedNumber = number.replace(/\D/g, "");
+
+        // Ensure the number has 10 digits
+        if (cleanedNumber.length < 10) {
+            return "Entered less than 10 digits.";
+        }
+        if (cleanedNumber.length > 10) {
+            return "Entered more than 10 digits.";
+        }
+
+        // Format the number using string slicing
+        const areaCode = cleanedNumber.slice(0, 3);
+        const firstThree = cleanedNumber.slice(3, 6);
+        const lastFour = cleanedNumber.slice(6);
+
+        return `${areaCode}-${firstThree}-${lastFour}`;
+    }
+
+    // Example usage
+    const phoneNumber = document.getElementById("phoneNumber");
+    if (phoneNumber) {
+        phoneNumber.addEventListener("input", function () {
+            const formattedNumber = formatPhoneNumber(this.value);
+            this.value = formattedNumber;
+        });
+    }
+
+
+    function handlePaste(event) {
+        // Check if the target is the input element
+        if (event.target.id === "MobilePhone") {
+            const pastedNumber = (event.clipboardData || window.clipboardData).getData('text');
+            const formattedNumber = formatPhoneNumber(pastedNumber);
+            event.target.value = formattedNumber;
+            // Replace input value with formatted number
+            event.preventDefault();
+            // Prevent default pasting behavior
+        }
+    }
+    function handlePastes(event) {
+        // Check if the target is the input element
+        if (event.target.id === "SpouseCell") {
+            const pastedNumber = (event.clipboardData || window.clipboardData).getData('text');
+            const formattedNumber = formatPhoneNumber(pastedNumber);
+            event.target.value = formattedNumber;
+            // Replace input value with formatted number
+            event.preventDefault();
+            // Prevent default pasting behavior
+        }
+    }
+    function Mobilephonenochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#MobilePhone').val();
+            if (ph.length == 3) { $('#MobilePhone').val(ph + '-'); }
+            if (ph.length == 7) { $('#MobilePhone').val(ph + '-'); }
+        }
+    }
+    function deleteRow(i) {
+        try {
+            var row = document.getElementById("child-" + i);
+            row.parentNode.removeChild(row);
+        } catch (e) {
+            alert(e);
+        }
+    }
+
+    function deleteRow1(i) {
+        try {
+            var row = document.getElementById(i);
+            row.parentNode.removeChild(row);
+        } catch (e) {
+            alert(e);
+        }
+    }
+
+    function DropDown(el) {
+        this.dd = el;
+       /* this.initEvents();*/
+    }
+    DropDown.prototype = {
+        initEvents: function () {
+            var obj = this;
+
+            obj.dd.on('click', function (event) {
+                $(this).toggleClass('active');
+                event.stopPropagation();
+            });
+        }
+    }
+
+    $(function () {
+
+        var dd = new DropDown($('#dd'));
+
+        $(document).click(function () {
+
+            $('.wrapper-dropdown-3').removeClass('active');
+
+        });
+
+    });
+
+    function CheckEmailAvailability(email) {
+
+        var returnval = null;
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("CheckEmailAvailability", "Members")', // the URL of the controller action method
+            data: { Email: email }, // optional data
+            datatype: "JSON",
+            async: false,
+            success: function (result) {
+                if (result.ok) {
+                    returnval = result.data;
+                }
+            }
+        });
+        return returnval;
+    }
+
+    function CheckUserNameAvailability(username) {
+
+        var returnval = null;
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("CheckUserNameAvailability", "Members")', // the URL of the controller action method
+            data: { UserName: username }, // optional data
+            datatype: "JSON",
+            async: false,
+            success: function (result) {
+                if (result.ok) {
+                    returnval = result.data;
+                }
+            }
+        });
+        return returnval;
+    }
+
+
+        function CheckPhoneNoAvailability(MobilePhone) {
+
+        var returnval = null;
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("CheckPhoneNoAvailability", "Members")', // the URL of the controller action method
+            data: { MobilePhone: MobilePhone }, // optional data
+            datatype: "JSON",
+            async: false,
+            success: function (result) {
+                if (result.ok) {
+                    returnval = result.data;
+                }
+            }
+        });
+        return returnval;
+    }
+
+
+
+
+
+
+        function PhoneNochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#MobilePhone').val();
+            if (ph.length == 3) { $('#MobilePhone').val(ph + '-'); }
+            if (ph.length == 7) { $('#MobilePhone').val(ph + '-'); }
+        }
+        }
+
+
+           function SpousePhoneNochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+            }
+        else {
+            var ph = $('#SpousePhoneNo').val();
+            if (ph.length == 3) { $('#SpousePhoneNo').val(ph + '-'); }
+            if (ph.length == 7) { $('#SpousePhoneNo').val(ph + '-'); }
+           }
+         }
+
+        function SelfPhoneNoChange1(event) {
+            if (event.keyCode == 8 || event.keyCode == 46) {
+            }
+            else {
+                var ph = $('#SelfPhoneNo').val();
+                if (ph.length == 3) { $('#SelfPhoneNo').val(ph + '-'); }
+                if (ph.length == 7) { $('#SelfPhoneNo').val(ph + '-'); }
+            }
+        }
+
+
+     function IndianSpouePhoneNoChange(event) {
+    if (event.keyCode == 8 || event.keyCode == 46) {
+    }
+    else {
+        var ph = $('#Field1').val();
+        if (ph.length == 3) { $('#Field1').val(ph + '-'); }
+        if (ph.length == 7) { $('#Field1').val(ph + '-'); }
+    }
+    }
+
+</script>
+<script type="text/javascript">
+         var appDateFormat = '@AWS_AssociationToolCore.BLL.AppDate.JqFormat'; // DATE
+
+    $(function () {
+        $(".ui-accordion").accordion({
+            collapsible: true,
+            heightStyle: "content"
+        });
+
+        // date picker
+        $(function () {
+            $(function () {
+                $(".datepicker").datepicker({
+                    altField: "#alternate",
+                    altFormat: appDateFormat
+                });
+            });
+        });
+    });
+    $(document).ready(function () {
+        $('#wMembership, #wMembers').addClass('active');
+
+        $(".Odate").datepicker({ changeMonth: true, changeYear: true, yearRange: "-90:+0", altField: '.Odate', altFormat: 'mm/dd/yy' });
+        $(".Edate").datepicker({ changeMonth: true, changeYear: true, yearRange: "-0:+40", altField: '.Edate', altFormat: 'mm/dd/yy' });
+        $(".Cdate").datepicker({ changeMonth: true, changeYear: true, yearRange: "-0:+40", altField: '.Cdate', altFormat: 'mm/dd/yy' });
+        $('#MMembers').addClass('active');
+    });
+
+
+    function NoofPaym() {
+        var type = $('#FrequencyofDonation').val();
+        if (type == 'OneTimeDonation') {
+
+            $('#TAmount').hide();
+            $('#NoofPay').hide();
+            $('#TStarts').hide();
+        }
+        else {
+            $('#TAmount').show();
+            $('#NoofPay').show();
+            $('#TStarts').show();
+
+        }
+
+    }
+
+
+    function Billing() {
+        var type = $('#SameBilling').val();
+        if (type == 'No') {
+            $('#TTTD').show();
+
+        }
+        else {
+            // alert(type);
+
+            $('#TTTD').hide();
+        }
+
+    }
+
+    function Insurance() {
+        var type = $('#Field2').val();
+        if (type == 'Yes') {
+            $('#Beneficiary').show();
+            $('#University').show();
+
+        }
+
+
+        else {
+            // alert(type);
+            $('#Beneficiary').hide();
+            $('#University').hide();
+
+
+        }
+
+    }
+
+    function DonatAmount() {
+        var type = $('#Donate').val();
+        if (type == 'Yes') {
+            $('#Frequency').show();
+
+        }
+        else {
+            // alert(type);
+            $('#Frequency').hide();
+        }
+
+    }
+
+    function AmountChange(AAmount) {
+        $('#OtherAmount').attr('readonly', 'readonly');
+        if (AAmount == 'Other') {
+            $('#Amount').val('');
+            $('#OtherAmount').removeAttr('readonly');
+        }
+        else {
+
+            var mamt = $('#TMemberAmount').val();
+            AAmount = parseFloat(AAmount) + parseFloat(mamt);
+            $('#MemberAmount').val(AAmount);
+            $('#total').html(AAmount);
+            $('#OtherAmount').val('');
+        }
+    }
+
+    function OtherNewAmount() {
+        var OtherAmount = $('#OtherAmount').val();
+
+        if (OtherAmount != '') {
+            var mamt = $('#TMemberAmount').val();
+            OtherAmount = parseFloat(OtherAmount) + parseFloat(mamt);
+            $('#MemberAmount').val(OtherAmount);
+            $('#total').html(OtherAmount);
+        }
+    }
+
+
+</script>
+<script type="text/javascript">
+           $(document).ready(function () {
+        document.querySelectorAll('.single-select').forEach(function (el) {
+            el.addEventListener('change', function () {
+                // Force close the Virtual Select dropdown after selection
+                if (this.closeDropbox) {
+                    this.closeDropbox();
+                } else if (this.classList.contains('vscomp-ele')) {
+                    document.body.click(); // fallback: simulate outside click to close
+                }
+            });
+        });
+    });
+    $(document).ready(function () {
+        $('#wVolunteer, #wVolunteers').addClass('active');
+        $('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+        $('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+    });
+           $(document).on('change', 'select', function () {
+        $(this).valid(); // Triggers jQuery Validate on this element
+    });
+        $("#VolunteerForm select").on("change", function () {
+        $(this).valid();
+    });
+    $(document).ready(function () {
+     
+        $.validator.addMethod("phoneFormat", function (value, element) {
+            if (value === "") {
+                return true;
+            }
+            var phoneNumber = value.replace(/\D/g, '');
+            var phoneNumberLength = phoneNumber.length;
+            if (phoneNumberLength >= 3 && phoneNumberLength <= 6) {
+                phoneNumber = phoneNumber.replace(/^(\d{3})(\d+)/, '$1-$2');
+            } else if (phoneNumberLength > 6) {
+                phoneNumber = phoneNumber.replace(/^(\d{3})(\d{3})(\d+)/, '$1-$2-$3');
+            }
+            $(element).val(phoneNumber);
+            var pattern = /^\d{3}-\d{3}-\d{4}$/;
+            return pattern.test(phoneNumber);
+        }, "Please enter format xxx-xxx-xxxx.");
+        $("#VolunteerForm").validate({
+            rules: {
+                FirstName: "required",
+                gender: "required",
+                MaritalStatus: "required",
+                LastName: "required",
+                    Email: {
+                     validate_email: true,
+                    remote: {
+                        type: "POST",
+                        url: "@Url.Action("CheckEmailAvailability", "Members")",
+                        dataType: "json",
+                        data: {
+                            Email: function () {
+                                return $("#Email").val().trim();  // Use ID directly
+                            }
+                        },
+                        dataFilter: function (response) {
+                            var responseData = JSON.parse(response);
+                            return responseData.data === true ? "true" : "false";
+                        }
+                    }
+                },
+                MobilePhone: {
+              
+                    phoneFormat: true
+                },
+                MembershipTypeId: "required",
+                //City: "required",
+                //Country: "required",
+                //State: "required",
+                //ZipCode: "required",
+
+                //VolunteerCategoryId: "required",
+            },
+            messages: {
+                FirstName: " First Name Is Required",
+                gender: " Please Select gender",
+                MaritalStatus: " Please Select Marital Status",
+                LastName: " Last Name Is Required",
+                Email: {
+                    validate_email: "Please Enter Valid Email Address",
+
+                },
+
+
+
+                Email: {
+                    required: "Please enter email address",
+                    validate_email: "Please enter valid email address",
+                    remote: "This email address is already in use."
+                },
+                MobilePhone: {
+                
+                    phoneFormat: "Please Enter Valid Phone Number",
+                },
+
+                MembershipTypeId: "Please Select Membership Type ",
+                //        MobilePhone: "required",
+                //City: " City is required",
+                //Country: " Country is required",
+                //ZipCode: " ZipCode is required",
+                //State: " State is required",
+                //VolunteerCategoryId: " Please Select Category",
+
+            },
+
+            errorElement: "div",
+            errorPlacement: function (error, element) {
+                // Add the `invalid-feedback` class to the error element
+                error.addClass("invalid-feedback");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+
+                // Move the error element after the fieldset element
+                if (element.closest(".input-box").length) {
+                    element.closest(".input-box").after(error);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                // Highlight the input, textarea, or select element with the `is-invalid` class
+                var $element = $(element);
+                if ($element.is('input, textarea, select')) {
+                    $element.addClass("is-invalid").removeClass("is-valid");
+                }
+
+
+            },
+                 unhighlight: function (element, errorClass, validClass) {
+                    var $element = $(element);
+                    if ($element.is('input, textarea, select')) {
+                        $element.addClass("is-valid").removeClass("is-invalid");
+                    }
+                    // hide this field's error message
+                    $('#VolunteerForm').find('.invalid-feedback[for="' + element.name + '"]').hide();
+                },
+            });
+                  DynamicCustomFields.wireValidation('#VolunteerForm', '.dynamic-fields-row');
+                      function applyCustomFieldRules() {
+        $('#VolunteerForm .dynamic-fields-row')
+            .find('input:not([type=hidden]), select, textarea')
+            .each(function () {
+                var $el = $(this);
+                if (!$el.attr('name')) return;
+
+                var $label = $el.closest('[class*="col-"]').find('label').first();
+
+                var isRequired =
+                    $el.prop('required') ||
+                    $el.attr('data-required') === 'true' ||
+                    $el.attr('aria-required') === 'true' ||
+                    $label.find('.text-danger, .input-imp, .required').length > 0 ||
+                    $label.text().indexOf('*') !== -1;
+
+                if (isRequired) {
+                    $el.rules('add', {
+                        required: true,
+                        messages: { required: 'This field is required' }
+                    });
+                }
+            });
+    }
+    applyCustomFieldRules();
+
+    $(document).on('input change', '.dynamic-fields-row input, .dynamic-fields-row select, .dynamic-fields-row textarea', function () {
+        var $field = $(this);
+        if ($field.val() && $field.val().toString().trim() !== '') {
+            $field.closest('[class*="col-"]').find('.invalid-feedback, em, .help-block, .error, .text-danger:not(label span)').hide();
+            $field.removeClass('is-invalid');
+        }
+    });
+
+        });
+
+</script>
+
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+

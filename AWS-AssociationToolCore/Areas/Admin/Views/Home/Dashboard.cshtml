@@ -1,0 +1,1216 @@
+﻿@using AWS_AssociationToolCore.BLL
+
+@{
+    ViewBag.Title = "Dashboard";
+    Layout = "~/Areas/Admin/Views/Shared/_MainLayout.cshtml";
+    ViewBag.Pageheading = "Dashboard";
+
+    Int64 MembersActiveCount = ViewBag.MembersActiveCount;
+    decimal MembersActiveSumAmount = ViewBag.MembersActiveSumAmount;
+    Int64 MembersInActiveCount = ViewBag.MembersInActiveCount;
+    decimal MembersInActiveSumAmount = ViewBag.MembersInActiveSumAmount;
+    decimal DonationsWeeklyAmount = ViewBag.DonationsWeeklyAmount;
+    decimal DonationsMonthlyAmount = ViewBag.DonationsMonthlyAmount;
+    Int64 DonationsWeeklyCount = ViewBag.DonationsWeeklyCount;
+    Int64 DonationsMonthlyCount = ViewBag.DonationsMonthlyCount;
+
+    List<AWS_AssociationToolCore.Entities.Members> lstactiveMembers = ViewBag.lstactiveMembers ?? new List<AWS_AssociationToolCore.Entities.Members>();
+    List<AWS_AssociationToolCore.Entities.Members> lstinactiveMembers = ViewBag.lstinactiveMembers ?? new List<AWS_AssociationToolCore.Entities.Members>();
+    List<AWS_AssociationToolCore.Entities.ServiceDonations> lstServiceDonations = ViewBag.lstServiceDonations ?? new List<AWS_AssociationToolCore.Entities.ServiceDonations>();
+    List<AWS_AssociationToolCore.Entities.Events> lstEvents = ViewBag.lstEvents ?? new List<AWS_AssociationToolCore.Entities.Events>();
+    List<AWS_AssociationToolCore.Entities.TableCount> lstTableCounts = ViewBag.lstTableCounts ?? new List<AWS_AssociationToolCore.Entities.TableCount>();
+
+    // Initials for the round avatar next to a name
+    string Initials(string first, string last)
+    {
+        var a = string.IsNullOrWhiteSpace(first) ? "" : first.Trim().Substring(0, 1).ToUpper();
+        var b = string.IsNullOrWhiteSpace(last) ? "" : last.Trim().Substring(0, 1).ToUpper();
+        var r = a + b;
+        return r == "" ? "?" : r;
+    }
+
+    // Soft colour for the payment status pill
+    string PayClass(string status)
+    {
+        var v = (status ?? "").Trim().ToLower();
+        if (v == "completed" || v == "paid" || v == "success") return "pill-green";
+        if (v == "pending") return "pill-amber";
+        if (v == "" || v == "n/a") return "pill-grey";
+        return "pill-rose";
+    }
+}
+
+<script>
+    $(document).ready(function () {
+        $('#wDashboard').addClass('active');
+    });
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<style type="text/css">
+    :root {
+        --d-ink: #1b2440;
+        --d-text: #3a4563;
+        --d-muted: #6f7a93;
+        --d-line: #e6eaf5;
+        --d-card: #ffffff;
+        --d-blue: #3d5bd9;
+        --d-green: #1f9d60;
+        --d-amber: #e08a2e;
+        --d-rose: #d9594a;
+        --d-violet: #7048d6;
+        --d-teal: #0f9aa8;
+        --d-shadow: 0 1px 2px rgba(27, 36, 64, .05), 0 8px 24px rgba(27, 36, 64, .06);
+    }
+
+    body {
+        background: linear-gradient(180deg, #eef2ff 0%, #f6f8fd 320px, #f4f7fc 100%);
+        background-attachment: fixed;
+    }
+
+    img {
+        max-width: 100% !important;
+    }
+
+    .body > .header .logo {
+        padding: 8px;
+    }
+
+    .dash {
+        font-family: 'Poppins', 'Segoe UI', Roboto, Arial, sans-serif;
+        color: var(--d-ink);
+        padding: 4px 2px 32px;
+        font-variant-numeric: tabular-nums;
+        animation: dashIn .35s ease both;
+    }
+
+        .dash h2, .dash h4, .dash h5, .dash h6 {
+            font-family: inherit;
+        }
+
+        .dash h6 {
+            font-size: 14px !important;
+        }
+
+    @@keyframes dashIn {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    /* ---------- Welcome banner ---------- */
+    .dash .hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px 24px;
+        padding: 24px 28px;
+        margin-bottom: 20px;
+        color: #fff;
+        background: linear-gradient(120deg, #3d5bd9 0%, #6a4bd6 55%, #b24bd0 100%);
+        border-radius: 20px;
+        box-shadow: 0 10px 28px rgba(80, 70, 210, .28);
+    }
+
+        .dash .hero::before,
+        .dash .hero::after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .10);
+            pointer-events: none;
+        }
+
+        .dash .hero::before {
+            width: 220px;
+            height: 220px;
+            right: -50px;
+            top: -90px;
+        }
+
+        .dash .hero::after {
+            width: 150px;
+            height: 150px;
+            right: 140px;
+            bottom: -90px;
+        }
+
+        .dash .hero > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .dash .hero h2 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .dash .hero p {
+            margin: 4px 0 0;
+            font-size: 14px;
+            color: rgba(255, 255, 255, .85);
+        }
+
+    .dash .hero-date {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 5px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #fff;
+        background: rgba(255, 255, 255, .18);
+        border: 1px solid rgba(255, 255, 255, .35);
+        border-radius: 999px;
+    }
+
+    .dash .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .dash .hero-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #fff;
+        background: rgba(255, 255, 255, .16);
+        border: 1px solid rgba(255, 255, 255, .4);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: background-color .15s ease, transform .15s ease;
+    }
+
+        .dash .hero-btn:hover {
+            background: #fff;
+            color: var(--d-violet);
+            transform: translateY(-1px);
+        }
+
+    /* ---------- Overview cards ---------- */
+    .dash .stat-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 22px;
+    }
+
+    .dash .stat-item {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 22px;
+        color: #fff;
+        border-radius: 18px;
+        box-shadow: var(--d-shadow);
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+        .dash .stat-item::after {
+            content: "";
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            right: -34px;
+            top: -44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .14);
+        }
+
+        .dash .stat-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 30px rgba(27, 36, 64, .16);
+        }
+
+        .dash .stat-item.si-green {
+            background: linear-gradient(135deg, #1f9d60, #3ecb8a);
+        }
+
+        .dash .stat-item.si-rose {
+            background: linear-gradient(135deg, #d9594a, #f2856f);
+        }
+
+        .dash .stat-item.si-blue {
+            background: linear-gradient(135deg, #3d5bd9, #6f8cf5);
+        }
+
+        .dash .stat-item.si-amber {
+            background: linear-gradient(135deg, #e08a2e, #f6b95f);
+        }
+
+    .dash .stat-icon {
+        position: relative;
+        z-index: 1;
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: #fff;
+        background: rgba(255, 255, 255, .22);
+    }
+
+    .dash .stat-body {
+        position: relative;
+        z-index: 1;
+        min-width: 0;
+    }
+
+    .dash .stat-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, .88);
+        margin-bottom: 2px;
+    }
+
+    .dash .stat-value {
+        margin: 0;
+        font-size: 27px;
+        font-weight: 700;
+        line-height: 1.15;
+        color: #fff;
+    }
+
+    .dash .stat-foot {
+        margin-top: 3px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, .85);
+    }
+
+    /* ---------- Section cards ---------- */
+    .dash .section-card {
+        background: var(--d-card);
+        border: 1px solid var(--d-line);
+        border-radius: 18px;
+        box-shadow: var(--d-shadow);
+        overflow: hidden;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dash .section-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 22px;
+    }
+
+    .dash .section-icon {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #fff;
+    }
+
+    .dash .section-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .dash .section-sub {
+        margin-top: 2px;
+        font-size: 12.5px;
+    }
+
+    .dash .section-body {
+        flex: 1;
+    }
+
+    .dash .section-foot {
+        padding: 11px 22px;
+        font-size: 12.5px;
+        color: var(--d-muted);
+        border-top: 1px solid var(--d-line);
+    }
+
+    /* header colours */
+    .dash .hd-blue {
+        background: linear-gradient(100deg, #dfe8ff, #ece6ff);
+        border-bottom: 1px solid #cfdcfb;
+    }
+
+    .dash .hd-green {
+        background: linear-gradient(100deg, #d6f2e3, #e4f7ea);
+        border-bottom: 1px solid #bde4cd;
+    }
+
+    .dash .hd-violet {
+        background: linear-gradient(100deg, #e6dcff, #f1e6ff);
+        border-bottom: 1px solid #d5c8f7;
+    }
+
+    .dash .hd-teal {
+        background: linear-gradient(100deg, #d2f0f3, #e0f4ee);
+        border-bottom: 1px solid #b6e2e7;
+    }
+
+    .dash .hd-blue .section-title {
+        color: #22377f;
+    }
+
+    .dash .hd-green .section-title {
+        color: #14573a;
+    }
+
+    .dash .hd-violet .section-title {
+        color: #3f2a8a;
+    }
+
+    .dash .hd-teal .section-title {
+        color: #0b5560;
+    }
+
+    .dash .hd-blue .section-sub {
+        color: #566aa8;
+    }
+
+    .dash .hd-green .section-sub {
+        color: #4a7d63;
+    }
+
+    .dash .hd-violet .section-sub {
+        color: #7662b3;
+    }
+
+    .dash .hd-teal .section-sub {
+        color: #4a8a93;
+    }
+
+    .dash .hd-blue .section-icon {
+        background: linear-gradient(135deg, #3d5bd9, #6f8cf5);
+    }
+
+    .dash .hd-green .section-icon {
+        background: linear-gradient(135deg, #1f9d60, #3ecb8a);
+    }
+
+    .dash .hd-violet .section-icon {
+        background: linear-gradient(135deg, #7048d6, #a37bf0);
+    }
+
+    .dash .hd-teal .section-icon {
+        background: linear-gradient(135deg, #0f9aa8, #3cc4cf);
+    }
+
+    .dash .ac-blue .section-foot {
+        background: #f6f8ff;
+    }
+
+    .dash .ac-green .section-foot {
+        background: #f4fbf7;
+    }
+
+    .dash .ac-violet .section-foot {
+        background: #f8f6ff;
+    }
+
+    /* ---------- Buttons ---------- */
+    .dash .btn-soft {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        margin-left: auto;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--d-blue);
+        background: #fff;
+        border: 1px solid #cfdcfb;
+        border-radius: 10px;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background-color .15s ease, color .15s ease, transform .15s ease;
+    }
+
+        .dash .btn-soft:hover {
+            background: var(--d-blue);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+    .dash .hd-green .btn-soft {
+        color: #14573a;
+        border-color: #bde4cd;
+    }
+
+        .dash .hd-green .btn-soft:hover {
+            background: var(--d-green);
+            color: #fff;
+        }
+
+    .dash .hd-violet .btn-soft {
+        color: #3f2a8a;
+        border-color: #d5c8f7;
+    }
+
+        .dash .hd-violet .btn-soft:hover {
+            background: var(--d-violet);
+            color: #fff;
+        }
+
+        .dash .btn-soft:focus-visible,
+        .dash .hero-btn:focus-visible,
+        .dash .reg-link:focus-visible {
+            outline: 3px solid rgba(61, 91, 217, .4);
+            outline-offset: 2px;
+        }
+
+    /* ---------- Tables ---------- */
+    .dash .table {
+        margin: 0;
+        --bs-table-bg: transparent;
+    }
+
+        .dash .table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            padding: 13px 22px;
+            font-size: 12.5px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            white-space: nowrap;
+        }
+
+        .dash .table tbody td {
+            padding: 14px 22px;
+            font-size: 14px;
+            color: var(--d-text);
+            vertical-align: middle;
+            border-bottom: 1px solid #eef1f8;
+        }
+
+        .dash .table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .dash .table tbody tr:nth-child(even) {
+            background: #fafbff;
+        }
+
+        .dash .table tbody tr {
+            transition: background-color .12s ease;
+        }
+
+            .dash .table tbody tr:hover {
+                background: #eef3ff;
+            }
+
+    .dash .th-blue thead th {
+        background: #eef3ff !important;
+        color: #2f4bc2 !important;
+        border-bottom: 2px solid #cfdcfb;
+    }
+
+    .dash .th-green thead th {
+        background: #eaf8f1 !important;
+        color: #17784a !important;
+        border-bottom: 2px solid #bde4cd;
+    }
+
+    .dash .th-violet thead th {
+        background: #f1ecff !important;
+        color: #5a3fb0 !important;
+        border-bottom: 2px solid #d5c8f7;
+    }
+
+    .dash .scroll-y {
+        max-height: 440px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd3ea transparent;
+    }
+
+        .dash .scroll-y::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dash .scroll-y::-webkit-scrollbar-thumb {
+            background: #cbd3ea;
+            border-radius: 999px;
+        }
+
+    .dash .person {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 160px;
+    }
+
+    .dash .avatar {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(135deg, #3d5bd9, #8a63e6);
+    }
+
+        .dash .avatar.av-green {
+            background: linear-gradient(135deg, #1f9d60, #3cc4cf);
+        }
+
+    .dash .person-name {
+        margin: 0;
+        font-size: 14px !important;
+        font-weight: 600;
+        color: var(--d-ink);
+    }
+
+    .dash .mail-link {
+        color: var(--d-blue);
+        text-decoration: none;
+    }
+
+        .dash .mail-link:hover {
+            text-decoration: underline;
+        }
+
+    .dash .id-chip {
+        display: inline-block;
+        padding: 3px 10px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #3f4d7a;
+        background: #e9eefc;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+
+    .dash .amount {
+        font-weight: 700;
+        color: var(--d-ink);
+        white-space: nowrap;
+    }
+
+    .dash .date-text {
+        color: var(--d-muted);
+        white-space: nowrap;
+    }
+
+    /* ---------- Pills ---------- */
+    .dash .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        font-size: 12.5px;
+        font-weight: 600;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
+        .dash .pill::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+    .dash .pill-green {
+        background: #dcf5e8;
+        color: #16794b;
+    }
+
+    .dash .pill-amber {
+        background: #ffecd0;
+        color: #a35a0a;
+    }
+
+    .dash .pill-rose {
+        background: #ffe3df;
+        color: #b53a2c;
+    }
+
+    .dash .pill-grey {
+        background: #eef0f6;
+        color: #7a849b;
+    }
+
+    .dash .type-pill {
+        display: inline-block;
+        padding: 4px 12px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #5a3fb0;
+        background: #ece6ff;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+
+    .dash .cause-pill {
+        display: inline-block;
+        padding: 4px 12px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #0b7d89;
+        background: #d9f2f5;
+        border-radius: 8px;
+    }
+
+    /* ---------- Registration links ---------- */
+    .dash .reg-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 13px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: #a35a0a;
+        background: #ffecd0;
+        border: 1px solid #fbd9a6;
+        border-radius: 999px;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background-color .15s ease;
+    }
+
+        .dash .reg-link:hover {
+            background: #ffe0b0;
+            color: #8a4a06;
+        }
+
+        .dash .reg-link .count {
+            min-width: 22px;
+            padding: 0 7px;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            color: #fff;
+            background: var(--d-amber);
+            border-radius: 999px;
+        }
+
+        .dash .reg-link.cultural {
+            color: #0b6670;
+            background: #d9f2f5;
+            border-color: #b6e2e7;
+        }
+
+            .dash .reg-link.cultural:hover {
+                background: #c5ebef;
+            }
+
+            .dash .reg-link.cultural .count {
+                background: var(--d-teal);
+            }
+
+    .dash .reg-none {
+        font-size: 13px;
+        color: #98a1b5;
+    }
+
+    .dash .event-name {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 150px;
+    }
+
+    .dash .event-dot {
+        width: 9px;
+        height: 9px;
+        min-width: 9px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #7048d6, #b24bd0);
+    }
+
+    /* ---------- Empty state ---------- */
+    .dash .empty-state {
+        text-align: center;
+        padding: 36px 16px !important;
+        color: #98a1b5;
+        font-size: 14px;
+    }
+
+        .dash .empty-state i {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 28px;
+            color: #c4cadb;
+        }
+
+    /* ---------- Quick links ---------- */
+    .dash .quick-links-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+        gap: 14px;
+        padding: 20px;
+        background: #fff;
+    }
+
+    .dash .quick-link-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border: 1px solid var(--d-line);
+        border-radius: 14px;
+        transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+        .dash .quick-link-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(27, 36, 64, .09);
+        }
+
+    .dash .quick-link-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #fff;
+    }
+
+    .dash .quick-link-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.25;
+    }
+
+    .dash .quick-link-name {
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--d-muted);
+    }
+
+    .dash .quick-link-count {
+        font-size: 21px;
+        font-weight: 700;
+        color: var(--d-ink);
+    }
+
+    .dash .tile-blue {
+        background: #f2f6ff;
+        border-color: #d3e0ff;
+    }
+
+        .dash .tile-blue .quick-link-icon {
+            background: linear-gradient(135deg, #3d5bd9, #6f8cf5);
+        }
+
+    .dash .tile-green {
+        background: #f1fbf6;
+        border-color: #c6eadb;
+    }
+
+        .dash .tile-green .quick-link-icon {
+            background: linear-gradient(135deg, #1f9d60, #3ecb8a);
+        }
+
+    .dash .tile-amber {
+        background: #fff8ee;
+        border-color: #fbe0b4;
+    }
+
+        .dash .tile-amber .quick-link-icon {
+            background: linear-gradient(135deg, #e08a2e, #f6b95f);
+        }
+
+    .dash .tile-violet {
+        background: #f7f4ff;
+        border-color: #ddd2fa;
+    }
+
+        .dash .tile-violet .quick-link-icon {
+            background: linear-gradient(135deg, #7048d6, #a37bf0);
+        }
+
+    .dash .tile-teal {
+        background: #f0fafb;
+        border-color: #bfe6ea;
+    }
+
+        .dash .tile-teal .quick-link-icon {
+            background: linear-gradient(135deg, #0f9aa8, #3cc4cf);
+        }
+
+    .dash .tile-rose {
+        background: #fff5f3;
+        border-color: #fbd3cc;
+    }
+
+        .dash .tile-rose .quick-link-icon {
+            background: linear-gradient(135deg, #d9594a, #f2856f);
+        }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 1199px) {
+        .dash .stat-strip {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 575px) {
+        .dash .stat-strip {
+            grid-template-columns: 1fr;
+        }
+
+        .dash .section-header {
+            flex-wrap: wrap;
+        }
+
+        .dash .hero {
+            padding: 18px;
+        }
+
+            .dash .hero h2 {
+                font-size: 21px;
+            }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .dash, .dash * {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="dash">
+
+    <!-- Welcome banner -->
+    <div class="hero">
+        <div>
+            <h2>Welcome back, Admin</h2>
+            <p>Here is what is happening with your association today.</p>
+            <span class="hero-date"><i class="bi bi-calendar-check"></i> @DateTime.Now.ToString("dddd, MMMM d, yyyy")</span>
+        </div>
+        <div class="hero-actions">
+            <a class="hero-btn" href="@Url.Action("Index", "Members", new { mid = 10 })"><i class="bi bi-people-fill"></i> Members</a>
+            <a class="hero-btn" href="@Url.Action("Index", "ServiceDonations")"><i class="bi bi-heart-fill"></i> Donations</a>
+            <a class="hero-btn" href="@Url.Action("Index", "Events", new { EventType = "upcoming", mid = 6 })"><i class="bi bi-calendar-event-fill"></i> Events</a>
+        </div>
+    </div>
+
+    <!-- Overview cards -->
+    <div class="stat-strip">
+        <div class="stat-item si-green">
+            <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-label">Active members</div>
+                <h4 class="stat-value">@MembersActiveCount</h4>
+                <div class="stat-foot">$@MembersActiveSumAmount.ToString("N2") total</div>
+            </div>
+        </div>
+        <div class="stat-item si-rose">
+            <div class="stat-icon"><i class="bi bi-person-dash-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-label">Inactive members</div>
+                <h4 class="stat-value">@MembersInActiveCount</h4>
+                <div class="stat-foot">$@MembersInActiveSumAmount.ToString("N2") total</div>
+            </div>
+        </div>
+        <div class="stat-item si-blue">
+            <div class="stat-icon"><i class="bi bi-calendar-week"></i></div>
+            <div class="stat-body">
+                <div class="stat-label">Donations this week</div>
+                <h4 class="stat-value">$@DonationsWeeklyAmount.ToString("N2")</h4>
+                <div class="stat-foot">@DonationsWeeklyCount @(DonationsWeeklyCount == 1 ? "donation" : "donations")</div>
+            </div>
+        </div>
+        <div class="stat-item si-amber">
+            <div class="stat-icon"><i class="bi bi-calendar3"></i></div>
+            <div class="stat-body">
+                <div class="stat-label">Donations this month</div>
+                <h4 class="stat-value">$@DonationsMonthlyAmount.ToString("N2")</h4>
+                <div class="stat-foot">@DonationsMonthlyCount @(DonationsMonthlyCount == 1 ? "donation" : "donations")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Members (full width) -->
+    <div class="section-card mb-4 ac-blue">
+        <div class="section-header hd-blue">
+            <div class="section-icon"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <h5 class="section-title">Members</h5>
+                <div class="section-sub">Latest membership orders</div>
+            </div>
+            <a href="@Url.Action("Index", "Members", new { mid = 10 })" class="btn-soft">
+                <i class="bi bi-grid-fill"></i> <span>View all members</span>
+            </a>
+        </div>
+
+        <div class="section-body">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 th-blue">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Membership type</th>
+                            <th>Payment</th>
+                            <th>Price</th>
+                            <th>Order date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (lstactiveMembers.Count != 0)
+                        {
+                            foreach (var item in lstactiveMembers)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (item.MemberSkils != null && item.MemberSkils != "")
+                                        {
+                                            <span class="id-chip">@item.MemberSkils</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="reg-none">--</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="person">
+                                            <span class="avatar">@Initials(item.FirstName, item.LastName)</span>
+                                            <h6 class="person-name">@item.FirstName @item.LastName</h6>
+                                        </div>
+                                    </td>
+                                    <td><a class="mail-link" href="mailto:@item.Email">@item.Email</a></td>
+                                    <td><span class="type-pill">@item.MembershipType</span></td>
+                                    <td>
+                                        @{
+                                            var payStatus = item.objMembershipOrder.PaymentStatus == null || item.objMembershipOrder.PaymentStatus == "" ? "N/A" : item.objMembershipOrder.PaymentStatus;
+                                        }
+                                        <span class="pill @PayClass(payStatus)">@payStatus</span>
+                                    </td>
+                                    <td class="amount">$@(item.objMembershipOrder.Amount == 0 ? "0.00" : item.objMembershipOrder.Amount.ToString("N2"))</td>
+                                    <td class="date-text">@(item.objMembershipOrder.OrderDate == DateTime.MinValue ? "N/A" : item.objMembershipOrder.OrderDate.ToAppDate())</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="empty-state"><i class="bi bi-inbox"></i>No members found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="section-foot">Showing the latest @lstactiveMembers.Count @(lstactiveMembers.Count == 1 ? "order" : "orders"). Use View all members for the full list.</div>
+    </div>
+
+    <!-- Donations + Events side by side -->
+    <div class="row g-4 align-items-stretch mb-4">
+        <div class="col-12 col-xl-6 d-flex">
+            <div class="section-card w-100 ac-green">
+                <div class="section-header hd-green">
+                    <div class="section-icon"><i class="bi bi-heart-fill"></i></div>
+                    <div>
+                        <h5 class="section-title">Donations</h5>
+                        <div class="section-sub">Most recent contributions</div>
+                    </div>
+                    <a href="@Url.Action("Index", "ServiceDonations")" class="btn-soft">
+                        <i class="bi bi-grid-fill"></i> <span>View all</span>
+                    </a>
+                </div>
+
+                <div class="section-body">
+                    <div class="table-responsive scroll-y">
+                        <table class="table align-middle mb-0 th-green">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Cause</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (lstServiceDonations.Count != 0)
+                                {
+                                    foreach (var item in lstServiceDonations)
+                                    {
+                                        <tr>
+                                            <td><span class="id-chip">@item.ServiceDonationId</span></td>
+                                            <td>
+                                                <div class="person">
+                                                    <span class="avatar av-green">@Initials(item.FirstName, item.LastName)</span>
+                                                    <h6 class="person-name">@item.FirstName @item.LastName</h6>
+                                                </div>
+                                            </td>
+                                            <td><span class="cause-pill">@item.DonationCause</span></td>
+                                            <td class="amount">$@Math.Round(item.Amount, 2).ToString("N2")</td>
+                                            <td class="date-text">@(item.OrderDate == DateTime.MinValue ? item.UpdatedDate.ToAppDate() : item.OrderDate.ToAppDate())</td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="empty-state"><i class="bi bi-inbox"></i>No donations found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="section-foot">Showing the latest @lstServiceDonations.Count @(lstServiceDonations.Count == 1 ? "donation" : "donations").</div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6 d-flex">
+            <div class="section-card w-100 ac-violet">
+                <div class="section-header hd-violet">
+                    <div class="section-icon"><i class="bi bi-calendar-event-fill"></i></div>
+                    <div>
+                        <h5 class="section-title">Current and upcoming events</h5>
+                        <div class="section-sub">Registrations at a glance</div>
+                    </div>
+                    <a href="@Url.Action("Index", "Events", new { EventType = "upcoming", mid = 6 })" class="btn-soft">
+                        <i class="bi bi-grid-fill"></i> <span>View all</span>
+                    </a>
+                </div>
+
+                <div class="section-body">
+                    <div class="table-responsive scroll-y">
+                        <table class="table align-middle mb-0 th-violet">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Event</th>
+                                    <th>Start date</th>
+                                    <th>Registrations</th>
+                                    <th>Cultural</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (lstEvents.Count != 0)
+                                {
+                                    Int64 i = 1;
+                                    foreach (var item in lstEvents)
+                                    {
+                                        <tr>
+                                            <td><span class="id-chip">@i</span></td>
+                                            <td>
+                                                <div class="event-name">
+                                                    <span class="event-dot"></span>
+                                                    <h6 class="person-name">@item.EventName</h6>
+                                                </div>
+                                            </td>
+                                            <td><span class="date-text">@item.StartDate.ToAppDate()</span></td>
+                                            <td>
+                                                @if (item.IsRegistration == true)
+                                                {
+                                                    <a class="reg-link" href="@Url.Action("Index", "EventRegistrations", new { EventId = item.EventId, EventName = item.EventName, mid = 6 })">
+                                                        Registrations <span class="count">@item.UsersCount</span>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="reg-none">No registrations</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (item.IsCulturalRegistration == true)
+                                                {
+                                                    <a class="reg-link cultural" href="@Url.Action("Index", "CulturalRegistrations", new { EventId = item.EventId, EventName = item.EventName, mid = ViewBag.Mid })">
+                                                        Cultural <span class="count">@item.CUsersCount</span>
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="reg-none">No registrations</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                        i++;
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="empty-state"><i class="bi bi-calendar-x"></i>No events found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="section-foot">@lstEvents.Count @(lstEvents.Count == 1 ? "event" : "events") current or upcoming.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="section-card ac-teal">
+        <div class="section-header hd-teal">
+            <div class="section-icon"><i class="bi bi-link-45deg"></i></div>
+            <div>
+                <h5 class="section-title">Quick links</h5>
+                <div class="section-sub">Record counts across the system</div>
+            </div>
+        </div>
+        @if (lstTableCounts.Count != 0)
+        {
+            string[] tones = { "blue", "green", "amber", "violet", "teal", "rose" };
+            int qi = 0;
+            <div class="quick-links-grid">
+                @foreach (var item in lstTableCounts)
+                {
+                    <div class="quick-link-item @("tile-" + tones[qi % tones.Length])">
+                        <div class="quick-link-icon"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+                        <div class="quick-link-text">
+                            <span class="quick-link-name">@item.TableName</span>
+                            <span class="quick-link-count">@item.TotalCount</span>
+                        </div>
+                    </div>
+                    qi++;
+                }
+            </div>
+        }
+        else
+        {
+            <p class="empty-state mb-0"><i class="bi bi-inbox"></i>No quick links found.</p>
+        }
+    </div>
+
+</div>

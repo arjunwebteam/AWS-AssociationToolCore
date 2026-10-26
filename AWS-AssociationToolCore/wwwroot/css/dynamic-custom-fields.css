@@ -1,0 +1,13 @@
+.dynamic-custom-fields .dcf-field.has-error .dcf-input,
+.dynamic-custom-fields .dcf-field.has-error input,
+.dynamic-custom-fields .dcf-field.has-error select,
+.dynamic-custom-fields .dcf-field.has-error textarea {
+    border-color: #dc3545;
+}
+
+.dynamic-custom-fields .dcf-error {
+    display: block;
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+}

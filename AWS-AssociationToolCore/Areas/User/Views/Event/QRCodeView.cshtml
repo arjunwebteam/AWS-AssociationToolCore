@@ -1,0 +1,1083 @@
+﻿@using Microsoft.AspNetCore.Http.Extensions
+@using Microsoft.AspNetCore.Http
+@{
+    Layout = "~/Areas/User/Views/Shared/_MainLayout.cshtml";
+
+    int status = 0;
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+
+    var location = objAppInfo.AdminImageUrl + "MemberProfileImages/";
+
+    var objEventUserInfo = (AWS_AssociationToolCore.Entities.EventUserInfo)ViewBag.objEventUserInfo;
+    List<AWS_AssociationToolCore.Entities.EventRegistrationCounts> lstEventRegistrationCounts = ViewBag.lstEventRegCounts;
+
+    var imglocNormal = objAppInfo.AdminImageUrl + "Content/CulturalEvent/";
+
+    var type = ViewBag.type;
+    var uid = ViewBag.uid;
+    var MembershipType = ViewBag.MembershipType;
+
+    ViewBag.Title = "Event QR Code Preview | " + objAppInfo.SiteName;
+    ViewBag.MetaDescription = "Preview your event QR code for quick access to " + objAppInfo.SiteName + " events and registrations.";
+    ViewBag.MetaKeywords = "Event QR code preview, Telugu event QR, QR access Telugu event, scan event code";
+
+    ViewBag.PageHeading = "Event Profile";
+
+    bool isLoggedIn = User.Identity.IsAuthenticated && !string.IsNullOrEmpty(Context.Session.GetString("username"));
+    bool hasCompetition = !string.IsNullOrEmpty(objEventUserInfo.ItemName);
+
+
+}
+
+<style>
+    /* =========================================================
+               EVENT PROFILE / CHECK-IN PAGE  (all rules scoped to .ev-page)
+               ========================================================= */
+    .ev-page {
+        --ev-maroon: #800020;
+        --ev-red: #c81515;
+        --ev-text: #1f2328;
+        --ev-muted: #6b7280;
+        --ev-line: #e5e7eb;
+        --ev-soft: #faf6f6;
+        --ev-radius: 10px;
+        color: var(--ev-text);
+        padding: 8px 0 30px;
+    }
+
+        /* ---------- Section card ---------- */
+        .ev-page .ev-section {
+            background: #fff;
+            border: 1px solid var(--ev-line);
+            border-radius: var(--ev-radius);
+            margin-bottom: 22px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,.05);
+        }
+
+        /* Section heading */
+        .ev-page .ev-section-title {
+            display: flex;
+            align-items: center;
+            margin: 0;
+            padding: 14px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.3;
+            color: #c3102a;
+            background: var(--ev-soft);
+            border-bottom: 1px solid var(--ev-line);
+            border-left: 4px solid var(--ev-maroon);
+            font-family: sans-serif;
+        }
+
+        .ev-page .ev-section-body {
+            padding: 20px;
+        }
+
+        /* ---------- Detail fields ---------- */
+        .ev-page .ev-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px 28px;
+        }
+
+        .ev-page .ev-field {
+            min-width: 0;
+        }
+
+            .ev-page .ev-field.full {
+                grid-column: 1 / -1;
+            }
+
+        .ev-page .ev-label {
+            display: block;
+            margin: 0 0 4px;
+            font-size: 13px;
+            font-weight: 400;
+            color: #551113;
+            line-height: 1.3;
+            font-family: 'Poppins-Medium';
+        }
+
+        .ev-page .ev-value {
+            display: block;
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ev-text);
+            line-height: 1.45;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+            .ev-page .ev-value.normal {
+                font-weight: 400;
+            }
+
+        /* ---------- Tables ---------- */
+        .ev-page .ev-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .ev-page .ev-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 0;
+            border: 1px solid var(--ev-line);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            .ev-page .ev-table thead th {
+                background: var(--ev-red);
+                color: #fff;
+                font-size: 14px;
+                font-weight: 600;
+                padding: 12px 16px;
+                text-align: left;
+                border: 0;
+                border-right: 1px solid rgba(255,255,255,.25);
+            }
+
+                .ev-page .ev-table thead th:last-child {
+                    border-right: 0;
+                }
+
+            .ev-page .ev-table tbody td {
+                padding: 12px 16px;
+                font-size: 15px;
+                vertical-align: middle;
+                border: 0;
+                border-top: 1px solid var(--ev-line);
+                background: #fff;
+            }
+
+            .ev-page .ev-table tbody tr:first-child td {
+                border-top: 0;
+            }
+
+            .ev-page .ev-table tbody tr:nth-child(even) td {
+                background: #fcfcfc;
+            }
+
+            .ev-page .ev-table .c {
+                text-align: center;
+            }
+
+            .ev-page .ev-table select.form-control {
+                max-width: 150px;
+                margin: 0 auto;
+                min-height: 38px;
+                padding: 6px 10px;
+                border-radius: 6px;
+                border: 1px solid #cfd4da;
+                font-size: 14px;
+            }
+
+                .ev-page .ev-table select.form-control:focus {
+                    border-color: var(--ev-red);
+                    box-shadow: 0 0 0 3px rgba(200,21,21,.12);
+                    outline: none;
+                }
+
+        .ev-page .ev-done {
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #b42318;
+            background: #fef3f2;
+            border-radius: 20px;
+        }
+
+        /* ---------- Check-in status rows ---------- */
+        .ev-page .ev-status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ev-page .ev-status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--ev-line);
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .ev-page .ev-status-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a7f4b;
+        }
+
+        .ev-page .ev-status-count {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ev-text);
+            white-space: nowrap;
+        }
+
+        /* ---------- Comment form ---------- */
+        .ev-page .ev-form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--ev-text);
+        }
+
+        .ev-page .ev-textarea {
+            width: 100%;
+            min-height: 110px;
+            padding: 12px 14px;
+            font-size: 15px;
+            border: 1px solid #cfd4da;
+            border-radius: 8px;
+            resize: vertical;
+        }
+
+            .ev-page .ev-textarea:focus {
+                border-color: var(--ev-red);
+                box-shadow: 0 0 0 3px rgba(200,21,21,.12);
+                outline: none;
+            }
+
+            .ev-page .ev-textarea.red-border {
+                border-color: #d92d20;
+            }
+
+        .ev-page .ev-error {
+            display: block;
+            min-height: 18px;
+            margin-top: 6px;
+            font-size: 13px;
+            color: #d92d20;
+        }
+
+        .ev-page .ev-actions {
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        /* ---------- Buttons ---------- */
+        .ev-page .ev-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 10px 32px;
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: .3px;
+            color: #fff !important;
+            background: var(--ev-maroon);
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none !important;
+            transition: background .2s ease, box-shadow .2s ease;
+        }
+
+            .ev-page .ev-btn:hover,
+            .ev-page .ev-btn:focus {
+                background: #a52a2a;
+                box-shadow: 0 4px 12px rgba(128,0,32,.25);
+                outline: none;
+            }
+
+        /* ---------- Login note ---------- */
+        .ev-page .ev-login-note {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 20px;
+            background: var(--ev-soft);
+            border: 1px dashed #d9b3bb;
+            border-radius: var(--ev-radius);
+        }
+
+        .ev-page .ev-login-text {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .ev-page .ev-login-note .ev-btn {
+            flex-shrink: 0;
+            min-height: 42px;
+            padding: 9px 28px;
+        }
+
+    /* ---------- Tablet ---------- */
+    @@media (max-width: 992px) {
+        .ev-page .ev-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    /* ===================== MOBILE (max 576px) ===================== */
+    @@media (max-width: 576px) {
+
+        .aws-inner-content {
+            background-color: #fff;
+            padding: 20px 10px;
+        }
+
+        .ev-page .ev-section {
+            margin-bottom: 18px;
+        }
+
+        .ev-page .ev-section-title {
+            padding: 12px 14px;
+            font-size: 16px;
+        }
+
+        .ev-page .ev-section-body {
+            padding: 16px 14px;
+        }
+        /* Personal details: one field per row with gap + separator */
+        .ev-page .ev-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        .ev-page .ev-field {
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+            .ev-page .ev-field:first-child {
+                padding-top: 0;
+            }
+
+            .ev-page .ev-field:last-child {
+                padding-bottom: 0;
+                border-bottom: 0;
+            }
+        /* ---------- Tables -> stacked cards (base) ---------- */
+        .ev-page .ev-table,
+        .ev-page .ev-table tbody,
+        .ev-page .ev-table tr,
+        .ev-page .ev-table td {
+            display: block;
+            width: 100% !important;
+        }
+
+        .ev-page .ev-table {
+            border: 0;
+            border-radius: 0;
+        }
+
+            .ev-page .ev-table thead {
+                display: none !important;
+            }
+
+            .ev-page .ev-table tbody tr {
+                margin-bottom: 12px;
+                border: 1px solid var(--ev-line);
+                border-radius: 8px;
+                overflow: hidden;
+            }
+
+                .ev-page .ev-table tbody tr:last-child {
+                    margin-bottom: 0;
+                }
+
+                .ev-page .ev-table tbody td,
+                .ev-page .ev-table tbody tr:nth-child(even) td {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    padding: 11px 14px;
+                    text-align: right !important;
+                    border-top: 1px solid var(--ev-line);
+                    background: #fff;
+                }
+
+                    .ev-page .ev-table tbody td:first-child {
+                        border-top: 0;
+                        background: var(--ev-soft);
+                        font-weight: 600;
+                    }
+
+                    .ev-page .ev-table tbody td::before {
+                        content: attr(data-label);
+                        flex-shrink: 0;
+                        font-size: 13px;
+                        font-weight: 500;
+                        color: var(--ev-muted);
+                        text-align: left;
+                    }
+        /* ---------- Registration Types: 2-box card ---------- */
+        .ev-page #regtypes tbody tr {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            margin-bottom: 14px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #c81515;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,.06);
+        }
+            /* Title (Family / Youth) */
+            .ev-page #regtypes tbody tr td:first-child {
+                grid-column: 1 / -1;
+                display: block;
+                padding: 12px 16px;
+                font-size: 17px;
+                font-weight: 600;
+                color: #ffffff;
+                text-align: left !important;
+                background: #800020;
+                border: 0;
+                border-bottom: 1px solid #eee;
+            }
+
+                .ev-page #regtypes tbody tr td:first-child::before {
+                    display: none;
+                }
+            /* Count + Amount boxes */
+            .ev-page #regtypes tbody tr td:not(:first-child) {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                justify-content: center;
+                gap: 4px;
+                padding: 14px 16px;
+                text-align: left !important;
+                background: #fff !important;
+                border: 0;
+                font-size: 18px;
+                font-weight: 600;
+                color: #1f2328;
+                white-space: nowrap;
+            }
+
+            .ev-page #regtypes tbody tr td:nth-child(2) {
+                border-right: 1px solid #eee;
+            }
+
+            .ev-page #regtypes tbody tr td:nth-child(3) {
+                color: #c81515;
+                font-weight: 700;
+            }
+
+            .ev-page #regtypes tbody tr td:not(:first-child)::before {
+                font-size: 12px;
+                font-weight: 600;
+                color: #000000;
+                letter-spacing: .2px;
+            }
+
+        .ev-page #regtypes select.form-control {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            min-height: 40px;
+            font-size: 14px;
+        }
+
+        .ev-page #regtypes .ev-done {
+            font-size: 12px;
+            padding: 4px 10px;
+            white-space: normal;
+        }
+        /* ---------- Check-in status ---------- */
+        .ev-page .ev-status-row {
+            padding: 11px 14px;
+        }
+        /* ---------- Login note + buttons ---------- */
+        .ev-page .ev-login-note {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+            padding: 18px 16px;
+            gap: 14px;
+        }
+
+            .ev-page .ev-login-note .ev-btn,
+            .ev-page .ev-actions .ev-btn {
+                width: 100%;
+            }
+    }
+
+    /* =========================================================
+           EVENT DETAILS CARDS (Event Name / Date / Location)
+           ========================================================= */
+    .ev-page .ev-page-title {
+        margin: 0 0 18px;
+        text-align: center;
+        font-size: 22px;
+        font-weight: 700;
+        color: #b4102a;
+        font-family: sans-serif;
+    }
+
+    .ev-page .ev-event-name {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 12px;
+        padding: 14px 16px;
+        background: #fdf3f4;
+        border: 1px solid #f3d6da;
+        border-radius: 12px;
+    }
+
+    .ev-page .ev-icon {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ev-red);
+        background: #fff;
+        border: 1px solid #f3d6da;
+        border-radius: 9px;
+    }
+
+        .ev-page .ev-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .ev-page .ev-icon.sm {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+        }
+
+            .ev-page .ev-icon.sm svg {
+                width: 18px;
+                height: 18px;
+            }
+
+    .ev-page .ev-event-name .ev-label,
+    .ev-page .ev-meta .ev-label {
+        font-size: 12px;
+        margin-bottom: 0;
+    }
+
+    .ev-page .ev-event-title {
+        display: block;
+        margin-top: 2px;
+        font-size: 19px;
+        font-weight: 700;
+        line-height: 1.3;
+   
+        word-break: break-word;
+        color: #b4102a;
+        font-family: sans-serif;
+    }
+
+    .ev-page .ev-meta {
+        grid-template-columns: 1fr 1fr;
+        margin-bottom: 22px;
+        background: #fdf3f4;
+        border: 1px solid #f3d6da;
+        border-radius: 12px;
+    }
+
+    .ev-page .ev-meta-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px;
+        min-width: 0;
+    }
+
+        .ev-page .ev-meta-item + .ev-meta-item {
+            border-left: 1px solid #f3d6da;
+        }
+
+    .ev-page .ev-meta-text {
+        min-width: 0;
+    }
+
+    .ev-page .ev-meta-value {
+        display: block;
+        margin-top: 1px;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.35;
+        color: var(--ev-text);
+        word-break: break-word;
+    }
+
+    .ev-page .ev-meta-sub {
+        display: block;
+        margin-top: 2px;
+        font-size: 12px;
+        line-height: 1.35;
+        color: var(--ev-muted);
+    }
+
+    @@media (max-width: 576px) {
+        .ev-page .ev-page-title {
+            margin-bottom: 14px;
+            font-size: 19px;
+        }
+
+        .ev-page .ev-event-name {
+            gap: 12px;
+            padding: 12px 14px;
+        }
+
+        .ev-page .ev-event-title {
+            font-size: 17px;
+        }
+
+        .ev-page .ev-meta {
+            margin-bottom: 18px;
+        }
+
+        .ev-page .ev-meta-item {
+            gap: 8px;
+            padding: 12px 10px;
+        }
+
+        .ev-page .ev-meta-value {
+            font-size: 13.5px;
+        }
+    }
+
+    /* very small phones: stack date and location */
+    @@media (max-width: 360px) {
+        .ev-page .ev-meta {
+            grid-template-columns: 1fr;
+        }
+
+        .ev-page .ev-meta-item + .ev-meta-item {
+            border-left: 0;
+            border-top: 1px solid #f3d6da;
+        }
+    }
+</style>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        Common.mfadeout();
+    });
+</script>
+
+<script type="text/javascript">
+    function SubmitCheckInJSON() {
+
+        // Validate comment
+        var comment = $('#Comment').val().trim();
+
+        if (comment === '') {
+            $('#spanComment').html('Required.');
+            $('#Comment').focus().addClass("red-border");
+            return false;
+        }
+        else {
+            $('#spanComment').html('');
+            $('#Comment').removeClass("red-border");
+        }
+
+        // Collect registration items
+        var registrationItems = [];
+
+        $('.reg-checkin').each(function () {
+
+            var checkinCount = $(this).val();
+
+            if (checkinCount !== '' && checkinCount !== undefined) {
+
+                registrationItems.push({
+                    EventRegistrationTypeId: $(this).data('id'),
+                    RegistrationTitle: $(this).data('title'),
+                    CheckinCount: parseInt(checkinCount),
+                    TotalCount: parseInt($(this).data('total')),
+                    Amount: parseFloat($(this).data('amount'))
+                });
+            }
+        });
+
+        if (registrationItems.length === 0) {
+            alert('Please select check-in count for at least one registration type.');
+            return false;
+        }
+
+        var eventRegistrationTypeId = registrationItems
+            .map(function (item) { return item.EventRegistrationTypeId; })
+            .join(',');
+
+        var jsonData = {
+            EventUserInfoId: $('#EventUserInfoId').val(),
+            EventId: $('#EventId').val(),
+            EmployeeCode: $('#EmployeeCode').val(),
+            EventRegistrationTypeId: eventRegistrationTypeId,
+            Status: 'Yes',
+            Comment: comment,
+            RegistrationItems: registrationItems
+        };
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("InsertCommentsJson", "Event")',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify(jsonData),
+
+            success: function (response) {
+                if (response.success) {
+                    alert(response.message);
+                    if (response.redirectUrl != null) {
+                        window.location.href = response.redirectUrl;
+                    }
+                }
+                else {
+                    alert(response.message);
+                }
+            },
+
+            error: function (xhr, status, error) {
+                console.log(xhr.responseText);
+                alert("Error : " + error);
+            }
+        });
+    }
+</script>
+
+<article class="clearfix ev-page">
+
+    <div id="divmessage">
+        @if (TempData["message"] != null)
+        {
+            @Html.Raw(TempData["message"].ToString())
+        }
+        @if (ViewBag.message != null)
+        {
+            @Html.Raw(ViewBag.message.ToString())
+        }
+    </div>
+
+    <div id="divmessage1">
+        @if (TempData["message1"] != null)
+        {
+            @Html.Raw(TempData["message1"].ToString())
+        }
+        @if (ViewBag.message1 != null)
+        {
+            @Html.Raw(ViewBag.message1.ToString())
+        }
+    </div>
+
+    @* ===================== EVENT DETAILS (Name / Date / Location) ===================== *@
+    <h2 class="ev-page-title">Event Registration Details</h2>
+
+    <div class="ev-event-name">
+        <span class="ev-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+        </span>
+        <div>
+            <span class="ev-label">Event Name</span>
+            <span class="ev-event-title">@objEventUserInfo.EventName</span>
+        </div>
+    </div>
+
+    <div class="ev-meta">
+        <div class="ev-meta-item">
+            <span class="ev-icon sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+            </span>
+            <div class="ev-meta-text">
+                <span class="ev-label">Event Date</span>
+                <span class="ev-meta-value">@objEventUserInfo.StartDate</span>
+              
+            </div>
+        </div>
+   
+    </div>
+
+    
+    <div class="ev-meta">
+     
+        <div class="ev-meta-item">
+            <span class="ev-icon sm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></svg>
+            </span>
+            <div class="ev-meta-text">
+                <span class="ev-label">Event Location</span>
+                <span class="ev-meta-value">@objEventUserInfo.Location</span>
+            </div>
+        </div>
+    </div>
+    @* ===================== PERSONAL / REGISTRATION DETAILS ===================== *@
+    <section class="ev-section">
+        <h3 class="ev-section-title">@(hasCompetition ? "Personal Details" : "Registrant Information")</h3>
+        <div class="ev-section-body">
+            <div class="ev-grid">
+                <div class="ev-field">
+                    <span class="ev-label">First Name</span>
+                    <span class="ev-value">@objEventUserInfo.FirstName</span>
+                </div>
+                <div class="ev-field">
+                    <span class="ev-label">Last Name</span>
+                    <span class="ev-value">@objEventUserInfo.LastName</span>
+                </div>
+                <div class="ev-field">
+                    <span class="ev-label">Mobile</span>
+                    <span class="ev-value">@objEventUserInfo.Mobile</span>
+                </div>
+                <div class="ev-field">
+                    <span class="ev-label">City</span>
+                    <span class="ev-value">@objEventUserInfo.City</span>
+                </div>
+                <div class="ev-field">
+                    <span class="ev-label">State</span>
+                    <span class="ev-value">@objEventUserInfo.State</span>
+                </div>
+                <div class="ev-field">
+                    <span class="ev-label">Email</span>
+                    <span class="ev-value">@objEventUserInfo.Email</span>
+                </div>
+                <div class="ev-field full">
+                    <span class="ev-label">Additional Info</span>
+                    <span class="ev-value normal">@(string.IsNullOrEmpty(objEventUserInfo.Comments) ? "-" : objEventUserInfo.Comments)</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @* ===================== COMPETITION INFO ===================== *@
+    @if (hasCompetition)
+    {
+        <section class="ev-section">
+            <h3 class="ev-section-title">Competition Info</h3>
+            <div class="ev-section-body">
+                <div class="ev-grid">
+                    <div class="ev-field">
+                        <span class="ev-label">Competition Name</span>
+                        <span class="ev-value">@objEventUserInfo.ItemCategory</span>
+                    </div>
+                    <div class="ev-field">
+                        <span class="ev-label">No of Participants</span>
+                        <span class="ev-value">@objEventUserInfo.ItemName</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ===================== REGISTRATION TYPES - CHECK-IN ===================== *@
+    @if (lstEventRegistrationCounts != null && lstEventRegistrationCounts.Count != 0)
+    {
+        int k = 0;
+        <section class="ev-section">
+            <h3 class="ev-section-title">Registration Types - Check-In</h3>
+            <div class="ev-section-body">
+                <div class="ev-table-wrap">
+                    <table id="regtypes" class="ev-table">
+                        <thead>
+                            <tr>
+                                <th>Registration Title</th>
+                                <th class="c">Reg. Count</th>
+                                <th class="c">Amount ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in lstEventRegistrationCounts)
+                            {
+                                <tr>
+                                    <td data-label="Registration Title">@item.RegistrationTitle</td>
+
+                                    @if (isLoggedIn)
+                                    {
+                                        if (item.Count - Convert.ToInt32(item.CheckinCount) == 0)
+                                        {
+                                            <td class="c" data-label="Check-In">
+                                                <span class="ev-done">Check-In Completed</span>
+                                            </td>
+                                        }
+                                        else
+                                        {
+                                            <td class="c" data-label="Check-In">
+                                                <select id="CheckinCount_@(k)"
+                                                        class="form-control reg-checkin"
+                                                        data-index="@(k)"
+                                                        data-id="@item.EventRegistrationTypeId"
+                                                        data-title="@item.RegistrationTitle"
+                                                        data-total="@item.Count"
+                                                        data-amount="@item.Amount">
+                                                    <option value="">-- Select --</option>
+                                                    @for (int i = 1; i <= item.Count - Convert.ToInt32(item.CheckinCount); i++)
+                                                    {
+                                                        <option value="@i">@i</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <td class="c" data-label="Reg. Count">@item.Count</td>
+                                    }
+
+                                    <td class="c" data-label="Amount ($)">$ @item.Amount</td>
+                                </tr>
+                                k++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ===================== PARTICIPANTS ===================== *@
+    @if (objEventUserInfo.lstEventParticipant != null && objEventUserInfo.lstEventParticipant.Count() != 0)
+    {
+        <section class="ev-section">
+            <h3 class="ev-section-title">Participants</h3>
+            <div class="ev-section-body">
+                <div class="ev-table-wrap">
+                    <table id="participants" class="ev-table">
+                        <thead>
+                            <tr>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th class="c">Age</th>
+                                <th class="c">Parents Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var Item in objEventUserInfo.lstEventParticipant)
+                            {
+                                <tr>
+                                    <td data-label="First Name">@Item.FirstName</td>
+                                    <td data-label="Last Name">@Item.LastName</td>
+                                    <td class="c" data-label="Age">@Item.Age</td>
+                                    <td class="c" data-label="Parents Name">@Item.Mobile</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ===================== PAYMENT DETAILS (hidden as before) ===================== *@
+    <div class="d-none">
+        <div class="cus-sub-head">Payment Details</div>
+        <div class="row">
+            <div class="col-xs-12 col-lg-3 col-sm-6">
+                <label>Payment Method :</label>
+                <label class="t-p5 black-t" style="font-weight:600">@(objEventUserInfo.objEventOrderDetails.PaymentMethod == null ? "N/A" : objEventUserInfo.objEventOrderDetails.PaymentMethod)</label>
+            </div>
+            <div class="col-xs-12 col-lg-3 col-sm-6">
+                <label>Transaction Id  :</label>
+                <label class="t-p5 black-t" style="font-weight:600">@(objEventUserInfo.objEventOrderDetails.TransactionId == null ? "N/A" : objEventUserInfo.objEventOrderDetails.TransactionId)</label>
+            </div>
+            <div class="col-xs-12 col-lg-3 col-sm-6">
+                <label>Amount :</label>
+                <label class="t-p5 black-t" style="font-weight:600"> $ @(objEventUserInfo.objEventOrderDetails.AmountPaid == null ? "N/A" : objEventUserInfo.objEventOrderDetails.AmountPaid.ToString())<span id="payamount"></span></label>
+            </div>
+            <div class="col-xs-12 col-lg-3 col-sm-6">
+                <label>Payment Status :</label>
+                <label class="t-p5 black-t" style="font-weight:600">@(objEventUserInfo.objEventOrderDetails.PaymentStatus == null ? "Pending" : objEventUserInfo.objEventOrderDetails.PaymentStatus)</label>
+            </div>
+        </div>
+    </div>
+
+    @* ===================== CHECK-IN STATUS ===================== *@
+    @if (lstEventRegistrationCounts != null && lstEventRegistrationCounts.Count != 0)
+    {
+        <section class="ev-section">
+            <h3 class="ev-section-title">Check-In Status with Comments</h3>
+            <div class="ev-section-body">
+                <div class="ev-status-list">
+                    @foreach (var item in lstEventRegistrationCounts)
+                    {
+                        <div class="ev-status-row">
+                            <span class="ev-status-name">@item.RegistrationTitle Check-In Count</span>
+                            <span class="ev-status-count">@(item.CheckinCount != null && item.CheckinCount != "" ? item.CheckinCount : "0") / @(item.Count)</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    @* ===================== CHECK-IN FORM / LOGIN NOTE ===================== *@
+    @if (isLoggedIn)
+    {
+        <section class="ev-section" id="checkin">
+            <h3 class="ev-section-title">Update Check-In</h3>
+            <div class="ev-section-body">
+                <input id="EventUserInfoId" type="hidden" value="@objEventUserInfo.EventUserInfoId" />
+                <input id="EventId" type="hidden" value="@objEventUserInfo.EventId" />
+                <input id="EmployeeCode" type="hidden" value="@Context.Session.GetString("username")" />
+
+                <label for="Comment" class="ev-form-label">Comments *</label>
+                <textarea id="Comment" name="Comment" placeholder="Enter your comments here..." class="ev-textarea"></textarea>
+                <span id="spanComment" class="ev-error"></span>
+
+                <div class="ev-actions">
+                    <button type="button" class="ev-btn" onclick="SubmitCheckInJSON();">Update Comments</button>
+                </div>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="ev-login-note">
+            <p class="ev-login-text"><strong>Note:</strong> Do you have a login? If yes, sign in to submit check-in details.</p>
+            <a href="#" data-bs-target="#loginpop" data-bs-toggle="modal" class="ev-btn">Click here to Login</a>
+        </div>
+    }
+
+    <div class="adminfooter"></div>
+</article>
+
+<script>
+    $(document).ready(function () {
+        $("#MLogin").validate({
+            rules: {
+                Email: { required: true, email: true },
+                Password: { required: true, minlength: 5 }
+            },
+            messages: {
+                Email: { required: "Please enter email address", email: "Please enter valid email address" },
+                Password: {
+                    required: "Please provide a password",
+                    minlength: "Your password must be at least 5 characters long"
+                }
+            },
+            errorElement: "em",
+            errorPlacement: function (error, element) {
+                error.addClass("help-block");
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+                if (element.closest("fieldset").length) {
+                    element.closest("fieldset").after(error);
+                }
+            },
+            highlight: function (element) {
+                $(element).parents("fieldset").addClass("has-error").removeClass("has-success");
+            },
+            unhighlight: function (element) {
+                $(element).parents("fieldset").addClass("has-success").removeClass("has-error");
+            }
+        });
+    });
+</script>

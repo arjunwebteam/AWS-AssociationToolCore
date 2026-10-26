@@ -1,0 +1,260 @@
+﻿@{
+    Layout = "~/Areas/User/Views/Shared/_MainLayout.cshtml";
+
+    var objAppInfo = (AWS_AssociationToolCore.Entities.AppInfo)ViewBag.objAppInfo;
+
+    AWS_AssociationToolCore.Entities.InnerPages objInnerPageMap = ViewBag.objInnerPageMap;
+
+    ViewBag.Title = "Contact Us | " + objAppInfo.SiteName;
+    ViewBag.MetaDescription = "Get in touch with the " + objAppInfo.SiteName + "for inquiries, events, and support.";
+
+    ViewBag.PageHeading = "Contact Us";
+
+    var ChapterId = ViewBag.ChapterId;
+
+    var cname = ViewBag.cname;
+
+    AWS_AssociationToolCore.Entities.PageDetails MenuPageDetails = ViewBag.objMenuPageDetails;
+
+    Int64 ActiveId = 0;
+
+    if (MenuPageDetails.ParentName != null && MenuPageDetails.ParentName != "")
+    {
+        ActiveId = MenuPageDetails.PageParentId;
+    }
+    else
+    {
+        ActiveId = MenuPageDetails.MenuItemId;
+    }
+
+    var capcha = objAppInfo.ShowCapcha;
+
+    //string secreatkey = objAppInfo.CapchaSiteKey;
+}
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("Honeypot").setAttribute("name", "TrapField_" + Math.random().toString(36).substring(2, 8));
+    });
+</script>
+
+    <div class="row g-3">
+    <div class="col-sm-6 col-lg-4 col-xl-6 ">
+            <div class="aws_contact_de_set">
+                <div class="aws_contact_icon_set">
+                    <span class="aws_icon_set">
+                        <i class="bi bi-telephone-fill"></i>
+                    </span>
+                </div>
+                <div class="ps-2">
+                    <div class="aws_adds_set">Phone Number </div>
+                    <p class="mb-0">@objAppInfo.CompanyPhone </p>
+                </div>
+            </div>
+        </div>
+  
+    <div class="col-sm-6 col-lg-6 col-xl-6  ">
+            <div class="aws_contact_de_set">
+                <div class="aws_contact_icon_set">
+                    <span class="aws_icon_set">
+                        <i class="bi bi-envelope-fill"></i>
+                    </span>
+                </div>
+                <div class="ps-2">
+                    <div class="aws_adds_set">Email Us </div>
+                    <p class="mb-0">@objAppInfo.CompanyEmail </p>
+                </div>
+            </div>
+
+        </div>
+      
+    </div>
+<div class="row g-3" style="justify-content: center;margin-top: 5px;">
+          <div class="col-sm-6 col-lg-6 col-xl-8 ">
+            <div class="aws_contact_de_set">
+                <div class="aws_contact_icon_set">
+                    <span class="aws_icon_set">
+                        <i class="bi bi-geo-alt-fill"></i>
+                    </span>
+                </div>
+                <div class="ps-2">
+                    <div class="aws_adds_set">Location </div>
+                    <p class="mb-0">@objAppInfo.CompanyAddress</p>
+                </div>
+            </div>
+        </div>
+        </div>
+            <div class="">
+    <div class="pt-4">
+        <div class="">
+        <div class="text-center">
+            <h4 class="aws-title2 ">Get In Touch</h4>
+            <p class="mb-0">We appreciate your interest and look forward to connecting with you!</p>
+        </div>
+        </div>
+          </div>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class=" p-lg-4 p-3">
+                    <div class="aws-form">
+                    
+    @using (Html.BeginForm("ContactUs", "Home", FormMethod.Post, new { name = "SignupForm", id = "SignupForm", enctype = "multipart/form-data" }))
+    {
+
+
+                            @Html.AntiForgeryToken()
+                            string secreatkey = objAppInfo.CapchaSiteKey;
+
+                            <input type="hidden" id="cname" name="cname" value="@cname" />
+                          
+                            <input type="hidden" name="ValidationCode" value="@ViewBag.ValidationCode" />
+                            @*<input type="hidden" id="recaptchaToken" name="recaptchaToken" />*@
+                            <input type="text" name="email2" style="display:none" />
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <fieldset class="">
+                                        <legend class="float-none w-auto px-1">Name <span class="input-imp">*</span></legend>
+                                        <input class="input-box" type="text" name="Name" id="Name" placeholder="First Name">
+                                    </fieldset>
+                                </div>
+                                <div class="col-md-6">
+                                    <fieldset class="">
+                                        <legend class="float-none w-auto px-1">
+                                            Email Id <span class="input-imp">*</span>
+                                        </legend>
+                                        <input class="input-box" type="text" name="Email" id="Email" placeholder="Email Id">
+                                    </fieldset>
+                                </div>
+                                <div class="col-md-12">
+                                    <fieldset class="">
+                                        <legend class="float-none w-auto px-1">
+                                            Mobile Number<span class="input-imp">*</span>
+                                        </legend>
+                                        <input class="input-box" type="text" name="PhoneNo" maxlength="12" id="PhoneNo" onkeypress="return Common.isNumberKey(event);" placeholder="Mobile Number">
+                                    </fieldset>
+                                    <span id="spanPhone"
+                                          style="color:#ff3737;font-family: 'Poppins-Regular';font-style: normal;font-size: 13px;text-transform: capitalize;line-height: 20px;display: none;"></span>
+                                </div>
+                                <div class="col-md-12">
+                                    <fieldset class="cus-filedset">
+                                        <legend class="float-none w-auto px-1">Comments<span class="input-imp">*</span></legend>
+                                        <textarea class="input-box" name="Description" id="Description"
+                                                  placeholder="Comments"></textarea>
+                                    </fieldset>
+                                </div>
+                            @if (objAppInfo.CustomFieldStatus == "Yes")
+                            {
+
+                            @await Component.InvokeAsync("DynamicCustomFields", new { formCode = AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Enquiries, recordId = 0L, theme = "userFrontEnd" })
+
+                            }
+
+
+                                <div class="row align-items-center">
+                               @*      @if (objAppInfo.CAPTCHA == "Yes")
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="">
+                                                <div class="g-recaptcha"
+                                                     data-sitekey="@secreatkey" data-callback="onRecaptchaSuccess">
+                                                     
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    } *@
+
+                                <div class="col-md-12 text-end">
+                                        <input type="hidden" id="Honeypot" name="Honeypot" />
+
+
+                                        <div class="text-end">
+                                            <button class="aws-btn" type="submit" id="submit-button">Submit</button>
+                                        </div>
+
+                                    </div>
+                                <div class="clearfix mt-4">
+                                    <input type="hidden" id="recaptchaResponse" name="recaptcha">
+                                </div>
+
+                                </div>
+
+
+                               
+
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+  $(document).ready(function () {
+          $("#SignupForm").validate({
+            rules: {
+                Name: "required",
+                Email: { required: true, validate_email: true },
+                PhoneNo: {
+                    required: true,
+                    phoneFormat: true
+                },
+                Description: "required"
+
+            },
+            messages: {
+                Name: "please enter your first name",
+                Email: { required: "please enter your email address", validate_email: "Please enter valid email address" },
+                PhoneNo: {
+                    required: "Please enter phone number",
+                    phoneFormat: "Please enter valid phone number",
+                },
+                Description: "please enter your comments"
+
+            },
+
+             
+
+            errorElement: "em",
+            errorPlacement: function (error, element) {
+                // Add the `help-block` class to the error element
+                error.addClass("help-block");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+
+                // Move the error element after the fieldset element
+                if (element.closest("fieldset").length) {
+                    element.closest("fieldset").after(error);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-error").removeClass("has-success");
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-success").removeClass("has-error");
+            },
+
+
+                  
+
+        });
+            DynamicCustomFields.wireValidation('#SignupForm', '.dynamic-custom-fields');
+
+  });
+
+
+
+    </script>
+
+
+

@@ -1,0 +1,651 @@
+﻿@{
+    Layout = "~/Areas/User/Views/Shared/_MainLayout.cshtml";
+
+    int status = 0;
+    AWS_AssociationToolCore.BLL.AppInfo _AppInfo = new AWS_AssociationToolCore.BLL.AppInfo();
+    AWS_AssociationToolCore.Entities.AppInfo objAppInfo = new AWS_AssociationToolCore.Entities.AppInfo();
+    objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
+
+    var Memberdetails = (AWS_AssociationToolCore.Entities.Members)ViewBag.Memberdetails;
+
+    List<AWS_AssociationToolCore.Entities.VolunteerCategories> lstVolunteerCategory = ViewBag.lstVolunteerCategory;
+    List<AWS_AssociationToolCore.Entities.Chapters> lstChapters = ViewBag.lstChapters;
+    Int64 VolunteerCategoryId = ViewBag.VolunteerCategoryId;
+
+    Int64 EventId = ViewBag.EventId;
+
+    Int64 MemberId = ViewBag.MemberId;
+
+    Int64 ChapterId = ViewBag.ChapterId != null ? (Int64)ViewBag.ChapterId : 1;
+
+    var objEvents = (AWS_AssociationToolCore.Entities.Events)ViewBag.objEvents;
+
+    var cname = ViewBag.cname;
+
+    AWS_AssociationToolCore.Entities.PageDetails MenuPageDetails = ViewBag.objMenuPageDetails;
+
+    Int64 ActiveId = 0;
+
+    if (MenuPageDetails.ParentName != null && MenuPageDetails.ParentName != "")
+    {
+        ActiveId = MenuPageDetails.PageParentId;
+    }
+    else
+    {
+        ActiveId = MenuPageDetails.MenuItemId;
+    }
+    var capcha = objAppInfo.ShowCapcha;
+    List<AWS_AssociationToolCore.Entities.country> lstCountries = new List<AWS_AssociationToolCore.Entities.country>();
+    lstCountries = ViewBag.lstCountries;
+
+    //string secreatkey = objAppInfo.CapchaSiteKey;
+
+    ViewBag.Title = "Become a Volunteer | " + objAppInfo.SiteName + " – Make a Difference Today";
+    ViewBag.MetaDescription = "Join our " + objAppInfo.SiteName + " as a volunteer and contribute to cultural events, community programs, and charity initiatives. Make an impact and support Telugu heritage!";
+
+    ViewBag.PageHeading = "Become a Volunteer";
+}
+
+
+<script src='https://www.google.com/recaptcha/api.js' type="text/javascript"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("Honeypot").setAttribute("name", "TrapField_" + Math.random().toString(36).substring(2, 8));
+    });
+</script>
+
+<script type="text/javascript">
+
+    function CheckEmailAvailability(email) {
+
+        var returnval = null;
+
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("CheckEmailAvailability", "Volunteer")', // the URL of the controller action method
+            data: { Email: email }, // optional data
+            datatype: "JSON",
+            async: false,
+            success: function (result) {
+                if (result.ok) {
+                    returnval = result.data;
+                    $('#volunteeralert').show();
+                }
+            }
+        });
+        return returnval;
+    }
+
+     function StatesBind() {
+        var CountryID = $('#Country').val();
+        $.ajax({
+            url: '@Url.Action("GetStatesByCountryID", "Volunteer")',
+            type: 'POST',
+            data: { CountryID: CountryID }, // optional data
+            datatype: "JSON",
+            success: function (result) {
+                if (result.ok) {
+                    var sb = "<option value=\"\">-- Select --</option>";
+                    States = result.data;
+                    if (States != null) {
+                        for (var i = 0; i < States.length; i++) {
+                            sb = sb + "<option value=\"" + States[i].StateID + "\">" + States[i].StateName + "</option>";
+                        }
+                    }
+                    $('#State').html(sb);
+                }
+            }
+        });
+    }
+
+    var specialKeys = new Array();
+    specialKeys.push(8); //Backspace
+    specialKeys.push(9); //Tab
+    specialKeys.push(32); //Space
+    specialKeys.push(46); //Delete
+    specialKeys.push(36); //Home
+    specialKeys.push(35); //End
+    specialKeys.push(37); //Left
+    specialKeys.push(39); //Right
+
+
+
+    // function onRecaptchaSuccess(token) {
+    //     $("#recaptchaResponse").val(token);
+    //      $("#recaptchaResponse").valid();
+    // }
+
+
+    
+    function PhoneNochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#PhoneNo').val();
+            if (ph.length == 3) { $('#PhoneNo').val(ph + '-'); }
+            if (ph.length == 7) { $('#PhoneNo').val(ph + '-'); }
+        }
+    }
+
+    function cphonenochange(event) {
+        if (event.keyCode == 8 || event.keyCode == 46) {
+        }
+        else {
+            var ph = $('#SelfPhoneNo').val();
+            if (ph.length == 3) { $('#SelfPhoneNo').val(ph + '-'); }
+            if (ph.length == 7) { $('#SelfPhoneNo').val(ph + '-'); }
+        }
+    }
+
+</script>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#VolunteerForm").validate({
+            rules: {
+                FirstName: "required",
+                LastName: "required",
+
+                Email: {
+                    required: true,
+                    validate_email: true,
+                    remote: {
+                        type: "POST",
+                        url: "/User/Members/CheckEmailAvailability",
+                        datatype: "JSON",
+                        async: false,
+                        data: {
+                            Email: function () {
+                                return $("#Email").val();
+                            }
+                        },
+                        dataFilter: function (data) {
+                            var responseData = JSON.parse(data);
+                            return responseData.data === true;
+                        }
+                    }
+                },
+                PhoneNo: {
+                    required: true,
+                    phoneFormat: true
+                },
+                Address: {
+                    required: true,
+                    minlength: 5
+                },
+                State: "required",
+                Country: "required",
+                City: "required",
+                ZipCode: {
+                    required: false,
+                    digits: true,
+                    number: true,
+                    minlength: 5,
+                    maxlength: 6
+                },
+                VolunteerCategoryId: "required",
+                ItemValue: "required"
+            },
+            messages: {
+                FirstName: "Please enter your first name",
+                LastName: "Please enter your last name",
+                Email: {
+                    required: "Please enter email address",
+                    validate_email: "Please enter valid email address",
+                    remote: "This email address is already in use."
+                },
+                PhoneNo: {
+                    required: "Please enter phone number",
+                    phoneFormat: "Please enter valid phone number"
+                },
+                Address: {
+                    required: "Please enter address",
+                    minlength: "Your text must be at least 5 characters long"
+                },
+                State: { required: "Please Select State" },
+                Country: { required: "Please Select Country" },
+                City: { required: "Please Select City" },
+                ZipCode: {
+                    digits: "Please enter only numeric characters",
+                    maxlength: "ZipCode must be exactly 6 digits"
+                },
+                VolunteerCategoryId: { required: "Please select at least one type." },
+                ItemValue: { required: "Please select Terms & Conditions" },
+                recaptcha: { required: "Please confirm that you are not a robot." }
+            },
+
+            // ── SINGLE source of truth for what happens on a valid submit ──
+            submitHandler: function (form) {
+                $("<input>")
+                    .attr({
+                        type: "hidden",
+                        name: "ClientValidationStatus",
+                        value: "true"
+                    })
+                    .appendTo(form);
+
+                form.submit();
+            },
+
+            // ── SINGLE source of truth for what happens on an invalid submit ──
+            invalidHandler: function (event, validator) {
+                var $firstError = $("#VolunteerForm em.help-block:visible").first();
+                if ($firstError.length) {
+                    $('html, body').animate({
+                        scrollTop: $firstError.offset().top - 100
+                    }, 500);
+                }
+            },
+
+            errorElement: "em",
+            errorPlacement: function (error, element) {
+                error.addClass("help-block");
+
+                if (element.prop("type") === "checkbox") {
+                    error.insertAfter(element.parent("label"));
+                } else {
+                    error.insertAfter(element);
+                }
+
+                if (element.closest("fieldset").length) {
+                    element.closest("fieldset").after(error);
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-error").removeClass("has-success");
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).parents("fieldset").addClass("has-success").removeClass("has-error");
+            }
+        });
+                DynamicCustomFields.wireValidation('#VolunteerForm', '.dynamic-custom-fields');
+
+    });
+</script>
+
+<div class="aws-form">
+
+
+    @using (Html.BeginForm("AddVolunteerRegistration", "Volunteer", FormMethod.Post, new { enctype = "multipart/form-data", name = "VolunteerForm", id = "VolunteerForm" }))
+    {
+        string secreatkey = objAppInfo.CapchaSiteKey;
+        @Html.AntiForgeryToken()
+        <input type="hidden" id="EventId" name="EventId" value="@EventId" />
+        <input type="hidden" id="cname" name="cname" value="@cname" />
+
+        if (EventId != 0)
+        {
+            <input type="hidden" id="Field2" name="Field2" value="Event Volunteer" />
+        }
+        else
+        {
+            <input type="hidden" id="Field2" name="Field2" value="General Volunteer" />
+        }
+
+        <input type="hidden" id="VolunteerCategories" name="VolunteerCategories" value="" />
+        <input type="hidden" name="Secure" id="Secure" class="Secure1" value="" />
+
+        <input type="hidden" name="ValidationCode" value="@ViewBag.ValidationCode" />
+        <input type="hidden" id="recaptchaToken" name="recaptchaToken" />
+        if (objAppInfo.chapterStatus == "No")
+        {
+            <input type="hidden" value="1" name="ChapterId" id="ChapterId" />
+        }
+      
+        <script>
+            function bindname() {
+                var name = $('#FirstName').val();
+                $('#volunteername').html(name);
+            }
+        </script>
+        <div class="row inner-form-row">
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">First Name <span class="input-imp">*</span></legend>
+                        <input class="input-box" placeholder="First Name " onchange="bindname();" value="@Memberdetails.FirstName" id="FirstName" name="FirstName" type="text">
+                        <span class="errormsg" id="spanFirstName"></span>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">
+                            Last Name <span class="input-imp">*</span>
+                        </legend>
+                        <input class="input-box" placeholder="Last Name " value="@Memberdetails.LastName" id="LastName" name="LastName" type="text">
+                        <span class="errormsg" id="spanLastName"></span>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">
+                            Email Address <span class="input-imp">*</span>
+                        </legend>
+                        <input class="input-box" placeholder="Email Address " value="@Memberdetails.Email" id="Email" name="Email" type="text">
+                        <span class="errormsg" id="spanEmail"></span>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">
+                            Phone Number <span class="input-imp">*</span>
+                        </legend>
+                        <input class="input-box" placeholder="Phone Number " maxlength="12" value="@Memberdetails.MobilePhone" onkeypress="PhoneNochange(event); return Common.isNumberKey(event);" id="PhoneNo" name="PhoneNo" type="text">
+                        <span class="errormsg" id="spanPhoneNo"></span>
+                    </fieldset>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+
+                <fieldset class="cus-filedset">
+                    <legend class="float-none w-auto px-1">
+                        Address1 <span class="input-imp">*</span>
+                    </legend>
+                    <textarea name="Address" id="Address" class="input-box"></textarea>
+                </fieldset>
+
+            </div>
+            <div class="col-md-6">
+
+                <fieldset class="cus-filedset">
+                    <legend class="float-none w-auto px-1">
+                        Address2
+                    </legend>
+                    <textarea name="Address2" id="Address2" class="input-box"></textarea>
+
+                </fieldset>
+
+            </div>
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">
+                            Country <span class="input-imp">*</span>
+                        </legend>
+                        <select class="input-box" id="Country" placeholder="Country " name="Country" @* onchange="StatesBind()" *@ >
+                            <option value="">Select Country</option>
+                            @if (lstCountries.Count != 0)
+                            {
+                                foreach (var item in lstCountries)
+                                {
+                                    <option value="@(item.CountryID)">@(item.CountryName)</option>
+                                }
+                            }
+
+                        </select>
+                        <span class="errormsg" id="spanCountry"></span>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">
+                            State/Province <span class="input-imp">*</span>
+                        </legend>
+                        @* <select class="input-box" id="State" placeholder="State *" name="State">
+                            <option value="" selected="selected">--Select--</option>
+
+                        </select> *@
+                        <select class="input-box" name="State" id="State" placeholder="State">
+                            <option value="">Select State *</option>
+                            <option @(Memberdetails.State == "Alabama" ? "selected=selected" : "") value="Alabama">Alabama</option>
+                            <option @(Memberdetails.State == "Alaska" ? "selected=selected" : "") value="Alaska">Alaska</option>
+                            <option @(Memberdetails.State == "Arizona" ? "selected=selected" : "") value="Arizona">Arizona</option>
+                            <option @(Memberdetails.State == "Arkansas" ? "selected=selected" : "") value="Arkansas">Arkansas</option>
+                            <option @(Memberdetails.State == "California" ? "selected=selected" : "") value="California">California</option>
+                            <option @(Memberdetails.State == "Colorado" ? "selected=selected" : "") value="Colorado">Colorado</option>
+                            <option @(Memberdetails.State == "Connecticut" ? "selected=selected" : "") value="Connecticut">Connecticut</option>
+                            <option @(Memberdetails.State == "Delaware" ? "selected=selected" : "") value="Delaware">Delaware</option>
+                            <option @(Memberdetails.State == "Florida" ? "selected=selected" : "") value="Florida">Florida</option>
+                            <option @(Memberdetails.State == "Georgia" ? "selected=selected" : "") value="Georgia">Georgia</option>
+                            <option @(Memberdetails.State == "Hawaii" ? "selected=selected" : "") value="Hawaii">Hawaii</option>
+                            <option @(Memberdetails.State == "Idaho" ? "selected=selected" : "") value="Idaho">Idaho</option>
+                            <option @(Memberdetails.State == "Illinois" ? "selected=selected" : "") value="Illinois">Illinois</option>
+                            <option @(Memberdetails.State == "Indiana" ? "selected=selected" : "") value="Indiana">Indiana</option>
+                            <option @(Memberdetails.State == "Iowa" ? "selected=selected" : "") value="Iowa">Iowa</option>
+                            <option @(Memberdetails.State == "Kansas" ? "selected=selected" : "") value="Kansas">Kansas</option>
+                            <option @(Memberdetails.State == "Kentucky" ? "selected=selected" : "") value="Kentucky">Kentucky</option>
+                            <option @(Memberdetails.State == "Louisiana" ? "selected=selected" : "") value="Louisiana">Louisiana</option>
+                            <option @(Memberdetails.State == "Maine" ? "selected=selected" : "") value="Maine">Maine</option>
+                            <option @(Memberdetails.State == "Maryland" ? "selected=selected" : "") value="Maryland">Maryland</option>
+                            <option @(Memberdetails.State == "Massachusetts" ? "selected=selected" : "") value="Massachusetts">Massachusetts</option>
+                            <option @(Memberdetails.State == "Michigan" ? "selected=selected" : "") value="Michigan">Michigan</option>
+                            <option @(Memberdetails.State == "Minnesota" ? "selected=selected" : "") value="Minnesota">Minnesota</option>
+                            <option @(Memberdetails.State == "Mississippi" ? "selected=selected" : "") value="Mississippi">Mississippi</option>
+                            <option @(Memberdetails.State == "Missouri" ? "selected=selected" : "") value="Missouri">Missouri</option>
+                            <option @(Memberdetails.State == "Montana" ? "selected=selected" : "") value="Montana">Montana</option>
+                            <option @(Memberdetails.State == "Nebraska" ? "selected=selected" : "") value="Nebraska">Nebraska</option>
+                            <option @(Memberdetails.State == "Nevada" ? "selected=selected" : "") value="Nevada">Nevada</option>
+                            <option @(Memberdetails.State == "New Hampshire" ? "selected=selected" : "") value="New Hampshire">New Hampshire</option>
+                            <option @(Memberdetails.State == "New Jersey" ? "selected=selected" : "") value="New Jersey">New Jersey</option>
+                            <option @(Memberdetails.State == "New Mexico" ? "selected=selected" : "") value="New Mexico">New Mexico</option>
+                            <option @(Memberdetails.State == "New York" ? "selected=selected" : "") value="New York">New York</option>
+                            <option @(Memberdetails.State == "North Carolina" ? "selected=selected" : "") value="Maryland">North Carolina</option>
+                            <option @(Memberdetails.State == "North Dakota" ? "selected=selected" : "") value="North Dakota">North Dakota</option>
+                            <option @(Memberdetails.State == "Ohio" ? "selected=selected" : "") value="Ohio">Ohio</option>
+                            <option @(Memberdetails.State == "Oklahoma" ? "selected=selected" : "") value="Oklahoma">Oklahoma</option>
+                            <option @(Memberdetails.State == "Oregon" ? "selected=selected" : "") value="Oregon">Oregon</option>
+                            <option @(Memberdetails.State == "Pennsylvania" ? "selected=selected" : "") value="Pennsylvania">Pennsylvania</option>
+                            <option @(Memberdetails.State == "Rhode Island" ? "selected=selected" : "") value="Rhode Island">Rhode Island</option>
+                            <option @(Memberdetails.State == "South Carolina" ? "selected=selected" : "") value="South Carolina">South Carolina</option>
+                            <option @(Memberdetails.State == "South Dakota" ? "selected=selected" : "") value="South Dakota">South Dakota</option>
+                            <option @(Memberdetails.State == "Tennessee" ? "selected=selected" : "") value="Tennessee">Tennessee</option>
+                            <option @(Memberdetails.State == "Texas" ? "selected=selected" : "") value="Texas">Texas</option>
+                            <option @(Memberdetails.State == "North Dakota" ? "selected=selected" : "") value="North Dakota">North Dakota</option>
+                            <option @(Memberdetails.State == "Utah" ? "selected=selected" : "") value="Utah">Utah</option>
+                            <option @(Memberdetails.State == "Vermont" ? "selected=selected" : "") value="Vermont">Vermont</option>
+                            <option @(Memberdetails.State == "Virginia" ? "selected=selected" : "") value="Virginia">Virginia</option>
+                            <option @(Memberdetails.State == "Washington" ? "selected=selected" : "") value="Washington">Washington</option>
+                            <option @(Memberdetails.State == "West Virginia" ? "selected=selected" : "") value="West Virginia"> West Virginia</option>
+                            <option @(Memberdetails.State == "Wisconsin" ? "selected=selected" : "") value="Wisconsin">Wisconsin</option>
+                            <option @(Memberdetails.State == "Wyoming" ? "selected=selected" : "") value="Wyoming">Wyoming</option>
+                            <option @(Memberdetails.State == "Other" ? "selected=selected" : "") value="Other">Other</option>
+                        </select>
+
+                        <span class="errormsg" id="spanState"></span>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">
+                            City <span class="input-imp">*</span>
+                        </legend>
+                        <input name="City" id="City" placeholder="City " class="input-box" type="text" />
+                        <span class="errormsg" id="spanCity"></span>
+                    </fieldset>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="pos-relative">
+                    <fieldset class="">
+                        <legend class="float-none w-auto px-1">
+                            Zip Code <span class="input-imp"></span>
+                        </legend>
+                        <input maxlength="6" id="ZipCode" name="ZipCode" placeholder="Zip Code " class="input-box" type="text" />
+                        <span class="errormsg" id="spanZipCode"></span>
+                    </fieldset>
+                </div>
+            </div>
+            @if (objAppInfo.CustomFieldStatus == "Yes")
+            {
+            
+            @await Component.InvokeAsync("DynamicCustomFields", new { formCode = AWS_AssociationToolCore.Entities.CustomFieldFormCodes.Volunteer, recordId = 0L, theme = "userFrontEnd" })
+            }
+            @if (objAppInfo.chapterStatus == "Yes")
+            {
+                <div class="col-md-6">
+                    <div class="pos-relative">
+                        <fieldset>
+                            <legend class="float-none w-auto px-1">Chapters <span class="input-imp">*</span></legend>
+                            <select class="input-box" name="ChapterId" id="ChapterId">
+                                @if (lstChapters != null && lstChapters.Count != 0)
+                                {
+                                    foreach (var item in lstChapters)
+                                    {
+                                        <option @(item.ChapterId == ChapterId ? "selected=selected" : "")
+                                                value="@item.ChapterId">@item.ChapterName</option>
+                                    }
+                                }
+                            </select>
+                        </fieldset>
+                    </div>
+                </div>
+            }
+
+            <div class="col-md-12">
+                <div class="pos-relative">
+                    <fieldset class="h-auto">
+                        <legend class="float-none w-auto px-1">
+                            Interests On <span class="input-imp">*</span>
+                        </legend>
+                        <div class="clearfix row">
+                            @if (lstVolunteerCategory.Count > 0)
+                            {
+                                int i = 1;
+                                foreach (var item in lstVolunteerCategory)
+                                {
+                                    <div class="col-md-4">
+                                        <div class="cus-checkbox">
+                                            <input name="VolunteerCategoryId" id="VolunteerCategoryId-@i" value="@item.VolunteerCategoryId" type="radio" />
+                                            <label for="VolunteerCategoryId-@i">@item.CategoryName</label>
+                                        </div>
+                                    </div>
+                                    i++;
+                                }
+                            }
+                        </div>
+                    </fieldset>
+                    <span class="errormsg" id="spanVolunteerCategoryId"></span>
+                </div>
+            </div>
+            <div class="col-md-12" style="display:none;">
+                <fieldset class="h-auto border p-3">
+                    <legend class="float-none w-auto px-1">India Contact</legend>
+                    <div class="row cus-checkbox-group pt-1 pb-2">
+                        <div class="col-md-12">
+                            Please provide native place and contact information in India:
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pos-relative">
+                                <fieldset class="border p-3">
+                                    <legend class="float-none w-auto px-1">
+                                        Town/City
+                                    </legend>
+                                    <input placeholder="Town/City " id="SelfCity" name="SelfCity" class="input-box" type="text" />
+                                    <span class="errormsg" id="spanSelfCity"></span>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pos-relative">
+                                <fieldset class="border p-3">
+                                    <legend class="float-none w-auto px-1">
+                                        District
+                                    </legend>
+                                    <input placeholder="District" id="SelfDistrict" name="SelfDistrict" class="input-box" type="text" />
+                                    <span class="errormsg" id="spanSelfDistrict"></span>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pos-relative">
+                                <fieldset class="border p-3">
+                                    <legend class="float-none w-auto px-1">
+                                        Contact Name
+                                    </legend>
+                                    <input placeholder="Contact Name " id="SelfName" name="SelfName" class="input-box" type="text" />
+                                    <span class="errormsg" id="spanSelfName"></span>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pos-relative">
+                                <fieldset class="border p-3">
+                                    <legend class="float-none w-auto px-1">
+                                        Contact Phone
+                                    </legend>
+                                    <input placeholder="Contact Phone " maxlength="12" onkeypress="cphonenochange(event); return Common.isNumberKey(event);" id="SelfPhoneNo" name="SelfPhoneNo" class="input-box" type="text" />
+                                    <span class="errormsg" id="spanSelfPhoneNo"></span>
+                                </fieldset>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="pos-relative">
+                                <fieldset class="border p-3">
+                                    <legend class="float-none w-auto px-1">
+                                        Your Relation
+                                    </legend>
+                                    <input placeholder="Your Relation" id="SelfRelation" name="SelfRelation" class="input-box" type="text" />
+                                    <span class="errormsg" id="spanSelfRelation"></span>
+                                </fieldset>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="col-md-12">
+                <fieldset class="h-auto">
+                    <legend class="float-none w-auto px-1">Terms & Conditions <span class="input-imp">*</span></legend>
+                    <p>
+                        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s,
+                        when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting,
+                        remaining essentially unchanged.
+                    </p>
+                    <p>
+                        It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters,
+                        as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text,
+                        and a search for 'lorem ipsum' will uncover many web sites still in their infancy.
+                    </p>
+
+
+                    <div class="cus-checkbox">
+                        <input type="checkbox" name="ItemValue" id="ItemValue-2" value="Volunteering">
+                        <label for="ItemValue-2">I accept above Terms & Conditions.</label>
+                    </div>
+                </fieldset>
+            </div>
+
+
+
+        </div>
+        @*<div class="clearfix">
+                <input type="hidden" id="Honeypot" name="Honeypot" />
+            </div>*@
+        <div class="row align-items-center">
+
+
+            <div class="col-md-12 text-end">
+                <input type="hidden" id="Honeypot" name="Honeypot" />
+
+
+                <div class="text-end">
+                    <button class="aws-btn" type="submit" id="submit-button">Submit</button>
+                </div>
+
+            </div>
+
+           </div>
+
+
+           @*  <div class="clearfix mt-4">
+                <input type="hidden" id="recaptchaResponse" name="recaptcha">
+            </div> *@
+
+            }
+        </div>
+
+
+
+
+

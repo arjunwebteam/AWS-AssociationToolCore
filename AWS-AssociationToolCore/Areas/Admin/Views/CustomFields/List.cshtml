@@ -1,0 +1,160 @@
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+@using System.Security.Claims
+
+
+@{ Layout = null;}
+@{
+    string sortcolumn = (string)ViewBag.sortcolumn;
+    string sortorder = (string)ViewBag.sortorder;
+    Int64 Total = (Int64)ViewBag.total;
+    var PageNo = (Int64)ViewBag.pageno;
+    var Items = (Int64)ViewBag.items;
+
+    List<AWS_AssociationToolCore.Entities.CustomFields> lstCustomFields = ViewBag.lstCustomFields;
+
+    string userRole = Context.Session.GetString("userrole") ?? string.Empty;
+
+    var choiceTypes = new[] { "Dropdown", "Radio", "Checkbox", "MultiSelect" };
+}
+
+
+
+
+<div class="card-body">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+
+                    <th width="1%" style="text-align:center">S.No.</th>
+                    <th width="14%" style="text-align: left">
+                        <a onclick="javascript:sortresult('FormName');" class="cursor-pointer aws-h-a " style="color: black;">
+                            Form @if (sortcolumn == "FormName")
+                            {<img alt="@(sortorder)" title="@(sortorder)" src="Content/Admin/images/sort_@(sortorder).gif" />}
+                        </a>
+                    </th>
+                    <th width="18%" style="text-align: left">
+                        <a onclick="javascript:sortresult('FieldLabel');" class="cursor-pointer aws-h-a " style="color: black;">
+                            Field Label @if (sortcolumn == "FieldLabel")
+                            {<img alt="@(sortorder)" title="@(sortorder)" src="Content/Admin/images/sort_@(sortorder).gif" />}
+                        </a>
+                    </th>
+                    <th width="14%" style="text-align: left">
+                        Field Name
+                    </th>
+                    <th width="10%" style="text-align: left">
+                        <a onclick="javascript:sortresult('FieldType');" class="cursor-pointer aws-h-a " style="color: black;">
+                            Field Type @if (sortcolumn == "FieldType")
+                            {<img alt="@(sortorder)" title="@(sortorder)" src="Content/Admin/images/sort_@(sortorder).gif" />}
+                        </a>
+                    </th>
+                    <th width="8%" style="text-align:center">
+                        <a onclick="javascript:sortresult('DisplayOrder');" class="cursor-pointer aws-h-a " style="color: black;">
+                            Order @if (sortcolumn == "DisplayOrder")
+                            {<img alt="@(sortorder)" title="@(sortorder)" src="Content/Admin/images/sort_@(sortorder).gif" />}
+                        </a>
+                    </th>
+                    <th width="8%" style="text-align:center">
+                        Required
+                    </th>
+                    <th width="8%" style="text-align:center">
+                        IsActive
+                    </th>
+                    <th width="12%" class="white-t-u" style="text-align:center">Actons</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @if (lstCustomFields.Count != 0)
+                {
+                    foreach (var item in lstCustomFields)
+                    {
+                <tr>
+
+                    <td width="41" style="text-align:center">@item.RId</td>
+                    <td style="text-align: left">@(item.FormName == "" || item.FormName == null ? "N/A" : item.FormName)</td>
+                    <td style="text-align: left">@item.FieldLabel</td>
+                    <td style="text-align: left">@item.FieldName</td>
+                    <td style="text-align: left">@item.FieldType</td>
+                    <td style="text-align:center">@item.DisplayOrder</td>
+                    <td style="text-align:center">
+                        @(item.IsRequired ? "Yes" : "No")
+                    </td>
+                    <td style="text-align:center;">
+                        <div class="menu-hover">
+                            @{ var isChecked = item.IsActive ? "checked" : ""; }
+                            @{var titleValue = item.IsActive ? "Active" : "Disabled";}
+
+                            <div>
+                                <label class="switch" title="@titleValue">
+                                    <input type="checkbox" onclick="CustomFieldStatus(@item.CustomFieldId, this.checked)" @isChecked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="text-align: center" class="t-t-c">
+                        <div class="table-actions  gap-3 fs-6">
+                           
+                                <a class="text-primary cursor-pointer" href="@Url.Action("ManageOptions", "CustomFields", new { id = item.CustomFieldId })" title="Manage Options" aria-label="Manage Options"><i class="bi bi-list-check"></i></a>
+                            
+                               <a class="text-secondary cursor-pointer" href="@Url.Action("ManageConditions", "CustomFields", new { formId = item.FormId })" title="Manage Conditions" aria-label="Manage Conditions"><i class="bi bi-diagram-3"></i></a>
+                        
+                                <a class="text-warning cursor-pointer" href="@Url.Action("Edit", "CustomFields", new { id = item.CustomFieldId })" title=" Edit" aria-label="Edit"><i class="bi bi-pencil-fill"></i></a>
+                            
+                          
+                                <a class="text-danger cursor-pointer" onclick="javascript:Delete(@item.CustomFieldId);" title="Delete" aria-label="Delete"><i class="bi bi-trash-fill"></i></a>
+                            
+                        </div>
+                    </td>
+                </tr>
+                    }
+                }
+                else
+                {
+                    <tr class="odd"><td valign="top" colspan="10" class="font-14 text-center">No Records found</td></tr>
+                }
+
+            </tbody>
+        </table>
+    </div>
+    <div class="row pt-3">
+        <div class="col-sm-4 col-md-5">
+            <div class="dataTables_info" id="example_info" role="status" aria-live="polite">
+                Showing @((PageNo * Items) - (Items - 1)) - @((PageNo * Items) > Total ? Total : (PageNo * Items)) of @Total entries
+            </div>
+        </div>
+        <div class="col-sm-3 col-md-7 " @(Total > 0 ? "" : "disable")>
+            <div class="d-flex flex-wrap gap-4 justify-content-end">
+                <div class="dataTables_paginate paging_simple_numbers" id="example_paginate">
+                    @Html.Raw(AWS_AssociationToolCore.BLL.Common.SetPaging((Int64)ViewBag.items, ref Total, (Int64)ViewBag.pageno, "pagination pb-0"))
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<style>
+    .aws-h-a {
+        text-decoration: none;
+        position: relative;
+    }
+
+        .aws-h-a::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -2px;
+            border-bottom: 2px solid #0756ca;
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .aws-h-a:hover::after {
+            transform: scaleX(1);
+        }
+</style>

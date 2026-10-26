@@ -1,0 +1,20 @@
+-------------------START-------------6/3/2026 5:17:30 AM
+Page :/SendMail
+Brevo API Status: Created, Response: {"messageId":"<202606031217.33145562700@smtp-relay.mailin.fr>"}
+
+-------------------END-------------6/3/2026 5:17:30 AM
+-------------------START-------------6/3/2026 5:17:31 AM
+Page :/SendMail
+Brevo API Status: Created, Response: {"messageId":"<202606031217.70109768518@smtp-relay.mailin.fr>"}
+
+-------------------END-------------6/3/2026 5:17:31 AM
+-------------------START-------------6/3/2026 5:19:08 AM
+Page :/SendMail
+Brevo API Status: Created, Response: {"messageId":"<202606031219.72966816597@smtp-relay.mailin.fr>"}
+
+-------------------END-------------6/3/2026 5:19:08 AM
+-------------------START-------------6/3/2026 5:19:08 AM
+Page :/SendMail
+Brevo API Status: Created, Response: {"messageId":"<202606031219.60055150773@smtp-relay.mailin.fr>"}
+
+-------------------END-------------6/3/2026 5:19:08 AM

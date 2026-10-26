@@ -1,0 +1,185 @@
+@model AWS_AssociationToolCore.Entities.DynamicFormViewModel
+@{
+    // Same field-type switch as Default.cshtml, but rendered with this site's
+    // public-form CSS classes (fieldset/legend/input-box/cus-checkbox/errormsg)
+    // instead of Bootstrap, so it drops into AddVolunteer.cshtml-style pages
+    // without looking out of place.
+}
+
+@if (Model.Fields != null && Model.Fields.Count > 0)
+{
+    <div class="dynamic-custom-fields"
+         data-form-id="@Model.FormId"
+         data-record-id="@Model.RecordId"
+         data-required-class="input-imp"
+         data-conditions='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Conditions, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }))'>
+
+        <div class="row inner-form-row">
+            @foreach (var field in Model.Fields.OrderBy(f => f.DisplayOrder))
+            {
+                Model.Values.TryGetValue(field.CustomFieldId, out string existingValue);
+                existingValue ??= field.DefaultValue ?? "";
+                string reqAttr = field.IsRequired ? "required" : "";
+                string reqMark = field.IsRequired ? "<span class=\"input-imp\">*</span>" : "";
+
+          @*       <div class="col-md-6 dcf-field" data-field-id="@field.CustomFieldId" data-field-name="@field.FieldName"
+                     data-required="@(field.IsRequired ? "true" : "false")">
+ *@
+                    <div class="col-md-6 dcf-field" data-field-id="@field.CustomFieldId" data-field-name="@field.FieldName"
+                         data-field-type="@field.FieldType"
+                         data-required="@(field.IsRequired ? "true" : "false")">
+
+
+                    <div class="pos-relative">
+                        <div class="fieldset-container">
+
+
+                            @if (field.FieldType == "Checkbox")
+                            {
+                                <fieldset class="h-auto border p-3">
+                                    <legend class="float-none w-auto px-1">@field.FieldLabel @Html.Raw(reqMark)</legend>
+                                    @{
+                                        var checkedValues = (existingValue ?? "").Split(',').Select(v => v.Trim()).ToList();
+                                    }
+                                    <div class="clearfix row dcf-input" data-checkbox-group="@field.FieldName">
+                                        @foreach (var opt in field.Options.Where(o => o.IsActive).OrderBy(o => o.DisplayOrder))
+                                        {
+                                            <div class="col-md-6">
+                                                <div class="cus-checkbox">
+                                                    <input type="checkbox" name="@(field.FieldName)" id="@(field.FieldName)_@opt.OptionId"
+                                                           value="@opt.OptionValue"
+                                                           checked="@(checkedValues.Contains(opt.OptionValue) ? "checked" : null)" />
+                                                    <label for="@(field.FieldName)_@opt.OptionId">@opt.OptionText</label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <span class="errormsg dcf-error" id="span_@field.FieldName"></span>
+                                </fieldset>
+                            }
+
+
+
+
+                            else if (field.FieldType == "Radio")
+                            {
+                                <fieldset class="border p-3">
+                                    <legend class="float-none w-auto px-1">@field.FieldLabel @Html.Raw(reqMark)</legend>
+                                    <div class="dcf-input pn">
+                                        @foreach (var opt in field.Options.Where(o => o.IsActive).OrderBy(o => o.DisplayOrder))
+                                        {
+                                            <div class="cus-radio">
+                                                <input type="radio" name="@field.FieldName" id="@(field.FieldName)_@opt.OptionId"
+                                                       value="@opt.OptionValue" @Html.Raw(reqAttr)
+                                                       checked="@(opt.OptionValue == existingValue ? "checked" : null)" />
+                                                <label for="@(field.FieldName)_@opt.OptionId">@opt.OptionText</label>
+                                            </div>
+                                        }
+                                    </div>
+                                    <span class="errormsg dcf-error" id="span_@field.FieldName"></span>
+                                </fieldset>
+                            }
+
+
+
+
+
+                            else
+                            {
+                                <fieldset class="border p-3">
+                                    <legend class="float-none w-auto px-1">@field.FieldLabel @Html.Raw(reqMark)</legend>
+
+                                    @switch (field.FieldType)
+                                    {
+                                        case "Textarea":
+                                            <textarea name="@field.FieldName" class="input-box dcf-input" placeholder="@field.Placeholder"
+                                  minlength="@field.MinLength" maxlength="@field.MaxLength" @Html.Raw(reqAttr)>@existingValue</textarea>
+                                            break;
+
+                                        case "Dropdown":
+                                            <select name="@field.FieldName" class="input-box dcf-input" @Html.Raw(reqAttr)>
+                                                <option value="">-- Select --</option>
+                                                @foreach (var opt in field.Options.Where(o => o.IsActive).OrderBy(o => o.DisplayOrder))
+                                                {
+                                                    <option value="@opt.OptionValue" selected="@(opt.OptionValue == existingValue ? "selected" : null)">@opt.OptionText</option>
+                                                }
+                                            </select>
+                                            break;
+
+                                        case "MultiSelect":
+                                            var selectedValues = (existingValue ?? "").Split(',').Select(v => v.Trim()).ToList();
+                                            <select name="@field.FieldName" class="input-box dcf-input" multiple @Html.Raw(reqAttr)>
+                                                @foreach (var opt in field.Options.Where(o => o.IsActive).OrderBy(o => o.DisplayOrder))
+                                                {
+                                                    <option value="@opt.OptionValue" selected="@(selectedValues.Contains(opt.OptionValue) ? "selected" : null)">@opt.OptionText</option>
+                                                }
+                                            </select>
+                                            break;
+
+                                        case "Date":
+                                            <input type="date" name="@field.FieldName" class="input-box dcf-input" value="@existingValue" @Html.Raw(reqAttr) />
+                                            break;
+
+
+                                        case "Time":
+                                            <input type="time" name="@field.FieldName" class="input-box dcf-input" value="@existingValue" @Html.Raw(reqAttr) />
+                                            break;
+
+                                        case "Number":
+                                            <input type="number" name="@field.FieldName" class="input-box dcf-input" value="@existingValue"
+                                                   placeholder="@field.Placeholder" min="@field.MinValue" max="@field.MaxValue" @Html.Raw(reqAttr) />
+                                            break;
+
+                                        case "Email":
+                                            <input type="email" name="@field.FieldName" class="input-box dcf-input" value="@existingValue"
+                                                   placeholder="@field.Placeholder" @Html.Raw(reqAttr) />
+                                            break;
+
+                                        case "Phone":
+                                            <input type="tel" name="@field.FieldName" class="input-box dcf-input" value="@existingValue"
+                                                   placeholder="@field.Placeholder" @Html.Raw(reqAttr) />
+                                            break;
+
+                                        @* case "File":
+                                            <input style="height: 300px;" type="file" name="@field.FieldName" class="input-box dcf-input"
+                                                   accept="@field.AllowedFileTypes" multiple="@(field.AllowMultiple ? "multiple" : null)" @Html.Raw(reqAttr) />
+                                            break; *@
+
+
+                                        case "File":
+                                            <input type="file" name="@field.FieldName" class="input-box dcf-input"
+                                                   accept="@field.AllowedFileTypes"
+                                                   multiple="@(field.AllowMultiple ? "multiple" : null)" @Html.Raw(reqAttr) />
+                                            break;
+
+
+
+                                        default: // Textbox
+                                                 <input type="text" name="@field.FieldName" class="input-box dcf-input" value="@existingValue"
+                                                        placeholder="@field.Placeholder" minlength="@field.MinLength" maxlength="@field.MaxLength"
+                                                        pattern="@field.ValidationPattern" @Html.Raw(reqAttr) />
+                                            break;
+                                    }
+                                    <span class="errormsg dcf-error" id="span_@field.FieldName"></span>
+                                </fieldset>
+                            }
+
+                            @if (!string.IsNullOrWhiteSpace(field.HelpText))
+                            {
+                                <small class="d-block mt-1 text-muted">@field.HelpText</small>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <script src="~/js/dynamic-custom-fields.js"></script>
+    <script>
+        $(function () {
+            DynamicCustomFields.init(document.querySelector('.dynamic-custom-fields[data-form-id="@Model.FormId"][data-record-id="@Model.RecordId"]'));
+        });
+    </script>
+}
+
