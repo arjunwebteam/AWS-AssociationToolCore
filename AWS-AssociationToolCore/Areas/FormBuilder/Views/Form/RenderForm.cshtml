@@ -903,8 +903,8 @@
             {
                 <div class="form-logo-wrap"
                      style="background-color: @(string.IsNullOrEmpty(logoBgColor) ? "transparent" : logoBgColor);
-                                                                                                                                                text-align: @(logoAlignment == "left" ? "left" : logoAlignment == "right" ? "right" : "center");
-                                                                                                                                                padding-bottom: @(logoBottomSpacing)px;@Html.Raw(logoBoxCss)">
+                                                                                                                                        text-align: @(logoAlignment == "left" ? "left" : logoAlignment == "right" ? "right" : "center");
+                                                                                                                                        padding-bottom: @(logoBottomSpacing)px;@Html.Raw(logoBoxCss)">
                     <img src="@Model.LogoUrl"
                          alt="@(string.IsNullOrEmpty(logoAltText) ? "Form Logo" : logoAltText)"
                          style="@(Model.LogoHeight.HasValue ? $"height:{Model.LogoHeight}px;" : "max-height:110px;")@(Model.LogoWidth.HasValue ? $"width:{Model.LogoWidth}px;" : "width:auto;")" />
@@ -2373,25 +2373,31 @@
         // built in the Form Builder's Conditions modal, live as the
         // visitor fills out the form.
         // ============================================================
-        function condGetValueEl(fieldId) {
-            const candidates = Array.from(container.querySelectorAll(`[data-field-id="${fieldId}"]`));
-            let el = candidates.find(e => e.tagName === 'INPUT' || e.tagName === 'SELECT' || e.tagName === 'TEXTAREA');
-            if (el) return el;
-            el = candidates.find(e => e.hasAttribute('data-rating'));
-            if (el) return el;
-            return candidates[0] || null;
-        }
+            function condGetValueEl(fieldId) {
+                const candidates = Array.from(container.querySelectorAll(`[data-field-id="${fieldId}"]`));
+                let el = candidates.find(e => e.tagName === 'INPUT' || e.tagName === 'SELECT' || e.tagName === 'TEXTAREA');
+                if (el) return el;
+                el = candidates.find(e => e.hasAttribute('data-rating'));
+                if (el) return el;
+                return candidates[0] || null;
+            }
 
-        function condGetControlEls(fieldId) {
-            const groupInputs = container.querySelectorAll(`input[name="${fieldId}"]`);
-            if (groupInputs.length) return Array.from(groupInputs);
-            const el = condGetValueEl(fieldId);
-            return el ? [el] : [];
-        }
-
+            function condGetControlEls(fieldId) {
+                const groupInputs = container.querySelectorAll(`input[name="${fieldId}"]`);
+                if (groupInputs.length) return Array.from(groupInputs);
+                const el = condGetValueEl(fieldId);
+                // Composite fields (Address: _street/_city/_zip) only have the wrapper under the plain id
+                if (el && !['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName) && !el.hasAttribute('data-rating')) {
+                    const subs = Array.from(container.querySelectorAll(
+                        `input[data-field-id^="${fieldId}_"], select[data-field-id^="${fieldId}_"], textarea[data-field-id^="${fieldId}_"]`));
+                    if (subs.length) return subs;
+                }
+                return el ? [el] : [];
+            }
         function condGetWrapper(fieldId) {
             return container.querySelector(`.form-group[data-field-id="${fieldId}"]`) ||
-                   container.querySelector(`.form-heading-group[data-field-id="${fieldId}"]`);
+                   container.querySelector(`.form-heading-group[data-field-id="${fieldId}"]`) ||
+                   container.querySelector(`.zfb-border-label[data-field-id="${fieldId}"]`);
         }
 
         function condGetFieldValue(fieldId) {
@@ -2494,16 +2500,42 @@
         }
 
 
-        function condApplyCopyValue(sourceFieldId, targetFieldId) {
-            if (!sourceFieldId) return;
-            const sourceVal = condGetFieldValue(sourceFieldId).value;
-            condGetControlEls(targetFieldId).forEach(inp => {
-                if (inp.type === 'checkbox' || inp.type === 'radio' || inp.type === 'file') return;
-                if (inp.value !== sourceVal) inp.value = sourceVal;
-            });
-        }
+            function condGetCompositeEls(fieldId) {
+                const el = condGetValueEl(fieldId);
+                if (!el || ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName) || el.hasAttribute('data-rating')) return [];
+                return Array.from(container.querySelectorAll(
+                    `input[data-field-id^="${fieldId}_"], select[data-field-id^="${fieldId}_"], textarea[data-field-id^="${fieldId}_"]`));
+            }
 
-      function evaluateAllConditions() {
+            function condApplyCopyValue(sourceFieldId, targetFieldId) {
+                if (!sourceFieldId) return;
+
+                // Address -> Address: copy _street / _city / _zip one by one
+                const srcSubs = condGetCompositeEls(sourceFieldId);
+                const tgtSubs = condGetCompositeEls(targetFieldId);
+                if (srcSubs.length || tgtSubs.length) {
+                    if (!srcSubs.length || !tgtSubs.length) return;
+                    srcSubs.forEach(s => {
+                        const suffix = s.getAttribute('data-field-id').slice(sourceFieldId.length);
+                        const t = tgtSubs.find(x => x.getAttribute('data-field-id').slice(targetFieldId.length) === suffix);
+                        if (t && t.value !== s.value) t.value = s.value;
+                    });
+                    return;
+                }
+
+                const sourceVal = condGetFieldValue(sourceFieldId).value;
+                condGetControlEls(targetFieldId).forEach(inp => {
+                    if (inp.type === 'checkbox' || inp.type === 'radio' || inp.type === 'file') return;
+                    if (inp.value !== sourceVal) inp.value = sourceVal;
+                });
+            }
+            function condClearValue(targetFieldId) {
+                condGetControlEls(targetFieldId).forEach(inp => {
+                    if (inp.type === 'checkbox' || inp.type === 'radio' || inp.type === 'file') return;
+                    if (inp.value !== '') inp.value = '';
+                });
+            }
+function evaluateAllConditions() {
     if (!Array.isArray(formConditions) || !formConditions.length) return;
 
     // 1) SHOW / HIDE — first combine ALL rules that target the same field,
@@ -2529,28 +2561,37 @@
     });
 
     // 2) All other actions — unchanged
-    formConditions.forEach(rule => {
-        if (!rule || !rule.triggerFieldId || !Array.isArray(rule.targetFieldIds)) return;
-        if (rule.action === 'show' || rule.action === 'hide') return;
-        const isTrue = condEvaluateRule(rule);
-        rule.targetFieldIds.forEach(tid => {
-            switch (rule.action) {
-                case 'require': condApplyRequireToggle(tid, isTrue); break;
-                case 'optional': condApplyRequireToggle(tid, !isTrue); break;
-                case 'enable': condApplyEnableDisable(tid, !isTrue); break;
-                case 'disable': condApplyEnableDisable(tid, isTrue); break;
-                case 'mask': condApplyMask(tid, isTrue); break;
-                case 'unmask': condApplyMask(tid, !isTrue); break;
-                case 'update': if (isTrue) condApplyCopyValue(rule.sourceFieldId, tid); break;
-            }
-        });
-    });
+                // 2) All other actions
+                formConditions.forEach(rule => {
+                    if (!rule || !rule.triggerFieldId || !Array.isArray(rule.targetFieldIds)) return;
+                    if (rule.action === 'show' || rule.action === 'hide') return;
+                    const isTrue = condEvaluateRule(rule);
+                    rule.targetFieldIds.forEach(tid => {
+                        switch (rule.action) {
+                            case 'require': condApplyRequireToggle(tid, isTrue); break;
+                            case 'optional': condApplyRequireToggle(tid, !isTrue); break;
+                            case 'enable': condApplyEnableDisable(tid, !isTrue); break;
+                            case 'disable': condApplyEnableDisable(tid, isTrue); break;
+                            case 'mask': condApplyMask(tid, isTrue); break;
+                            case 'unmask': condApplyMask(tid, !isTrue); break;
+                            case 'update':
+                                if (isTrue) condApplyCopyValue(rule.sourceFieldId, tid);
+                                else if (rule._wasTrue) condClearValue(tid);   // condition just turned false -> clear copied value
+                                break;
+                        }
+                    });
+                    if (rule.action === 'update') rule._wasTrue = isTrue;
+                });
 }
 
         function initFormConditions() {
             if (!Array.isArray(formConditions) || !formConditions.length) return;
             container.addEventListener('change', evaluateAllConditions);
             container.addEventListener('input', evaluateAllConditions);
+            // Select2 (Country) reports a selection through jQuery only, which the native listeners above never receive.
+            if (typeof $ !== 'undefined') {
+                $(container).on('change', '.zfb-country-select', evaluateAllConditions);
+            }
             evaluateAllConditions();
         }
         initFormConditions();

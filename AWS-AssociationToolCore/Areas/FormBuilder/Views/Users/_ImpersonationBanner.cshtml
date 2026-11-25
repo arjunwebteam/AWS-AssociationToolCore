@@ -17,7 +17,7 @@
             You are viewing as <strong>@Context.User.FindFirst(ClaimTypes.Name)?.Value</strong>
             (impersonated by @impersonatedByName)
         </span>
-        <a href="@Url.Action("StopImpersonating", "Users", new { area = "Admin" })"
+        <a href="@Url.Action("StopImpersonating", "Users", new { area = "FormBuilder" })"
            class="btn btn-sm btn-dark" style="padding:4px 12px;">
             Return to Admin
         </a>

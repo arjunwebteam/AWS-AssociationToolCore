@@ -505,7 +505,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.BLL
                     Entities.Role_Menu objRole_Menu = new Entities.Role_Menu();
 
                     objRole_Menu.MenuId = Convert.ToInt32(dr["MenuId"].ToString());
-                    objRole_Menu.RoleMenuMasterId = Convert.ToInt64(dr["RoleMenuMasterId"].ToString());
+                    objRole_Menu.RoleMenuMasterId = (dr["RoleMenuMasterId"] != DBNull.Value ? Convert.ToInt64(dr["RoleMenuMasterId"]) : 0);
                     objRole_Menu.IsAdd = (dr["IsAdd"] != DBNull.Value ? Convert.ToBoolean(dr["IsAdd"]) : false);
                     objRole_Menu.IsEdit = (dr["IsEdit"] != DBNull.Value ? Convert.ToBoolean(dr["IsEdit"]) : false);
                     objRole_Menu.IsView = (dr["IsView"] != DBNull.Value ? Convert.ToBoolean(dr["IsView"]) : false);

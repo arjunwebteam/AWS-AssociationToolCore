@@ -4,7 +4,7 @@
     Layout = null;
 
     int status = 0;
-   AWSFormBuilder.Areas.FormBuilder.BLL.AppInfo _AppInfo = new AWSFormBuilder.Areas.FormBuilder.BLL.AppInfo();
+    AWSFormBuilder.Areas.FormBuilder.BLL.AppInfo _AppInfo = new AWSFormBuilder.Areas.FormBuilder.BLL.AppInfo();
     AWSFormBuilder.Entities.AppInfo objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
 
     var designJson = string.IsNullOrEmpty(Model.DesignJson) ? "{}" : Model.DesignJson;
@@ -44,6 +44,13 @@
         <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     }
     <style>
+        .form-check {
+            display: block;
+            min-height: 2.5rem;
+            padding-left: 1.5em;
+            margin-bottom: .125rem;
+        }
+
         .select2-container--default.select2-container--focus .select2-selection--single, .select2-container--default.select2-container--open .select2-selection--single {
             border-color: rgb(31 32 33) !important;
         }
@@ -52,7 +59,7 @@
             font-size: 13px !important;
         }
         /* ✅ ADDED — "Border Label" field: a labelled horizontal divider,
-                                                                   same look as the Form Builder canvas preview. */
+                                                                                           same look as the Form Builder canvas preview. */
         .zfb-border-label {
             position: relative;
             margin: 24px 0;
@@ -120,7 +127,7 @@
             padding: 25px 35px 35px;
         }
 
-            .form-body .mb-3 {
+            .form-body .mb-3:not(.form-heading-group) {
                 margin-bottom: 22px !important;
             }
 
@@ -135,9 +142,25 @@
             margin-bottom: 6px;
         }
 
+        /* ✅ ADDED — Radio field (e.g. Area of Interest): bolder label, more gap below label, more gap between options */
+        .zfb-radio-field > .form-label {
+            font-weight: 700 !important;
+            font-size: 16px !important;
+            color: #1f2d3d;
+            margin-bottom: 12px; /* gap between label and first option */
+        }
+
+        .zfb-radio-field .form-check {
+            margin-bottom: 12px; /* gap between options */
+        }
+
+            .zfb-radio-field .form-check:last-child {
+                margin-bottom: 0;
+            }
+
         .zfb-address-heading {
             font-weight: 600 !important;
-            font-size: 13px !important;
+            font-size: 16px !important;
             color: #000 !important;
         }
 
@@ -226,8 +249,8 @@
         }
 
         /* floated state — box already has a value / a dropdown option is chosen
-                                           (needs :has(); kept in separate rules so an older browser can't
-                                           invalidate the rules above) */
+                                                                   (needs :has(); kept in separate rules so an older browser can't
+                                                                   invalidate the rules above) */
         .zfb-floating-group:has(.form-control:not(:placeholder-shown)) .form-label,
         .zfb-floating-group.zfb-fl-select:has(select option:not([value=""]):checked) .form-label,
         .zfb-floating-group.zfb-fl-select:has(.select2-container--open) .form-label,
@@ -243,13 +266,13 @@
         }
 
         /* ✅ ADDED — dropdowns (native + select2): while nothing is chosen the
-                                           label sits inside the box, so the "Select..." text is hidden. */
+                                                                   label sits inside the box, so the "Select..." text is hidden. */
         .zfb-floating-group.zfb-fl-select:not(:focus-within) select.form-select:has(option[value=""]:checked) {
             color: transparent;
         }
 
         /* Country/State select2: the label already says what the box is, so the grey
-                                           "Select Country" placeholder never needs to show next to the floated label. */
+                                                                   "Select Country" placeholder never needs to show next to the floated label. */
         .zfb-floating-group.zfb-fl-select .select2-selection__placeholder {
             color: transparent !important;
         }
@@ -334,8 +357,8 @@
         }
 
         /* ✅ CHANGED — step indicator now sits beside the Back/Next buttons
-                                                           (see .form-page-nav below) instead of centered above the fields,
-                                                           so it's left-aligned and sized to share a row with them. */
+                                                                                   (see .form-page-nav below) instead of centered above the fields,
+                                                                                   so it's left-aligned and sized to share a row with them. */
         .form-step-indicator {
             display: flex;
             align-items: center;
@@ -389,8 +412,8 @@
         }
 
         /* ✅ ADDED — groups Back + Next together on the right of the nav
-                                                           row, now that the step indicator (not these buttons) owns the
-                                                           left side of that row. */
+                                                                                   row, now that the step indicator (not these buttons) owns the
+                                                                                   left side of that row. */
         .form-page-nav-buttons {
             display: flex;
             align-items: center;
@@ -424,14 +447,14 @@
         }
 
             /* no hover colour change — same colours as the normal state (this also
-                                               stops Bootstrap's .btn:hover from repainting the button) */
+                                                                       stops Bootstrap's .btn:hover from repainting the button) */
             .btn-page-next:hover {
                 background: var(--zfb-btn-bg, rgb(19 69 143));
                 color: var(--zfb-btn-color, #fff);
             }
 
         /* ✅ ADDED — on the last page Submit joins the nav row: Back in the left
-                                           corner, Submit in the right corner. */
+                                                                   corner, Submit in the right corner. */
         .form-page-nav .submit-wrap {
             margin: 0 0 0 auto;
             text-align: right;
@@ -453,11 +476,26 @@
                 margin: 0;
             }
 
+        /* Long heading / paragraph text stays inside the form width and wraps onto 2, 3 or more lines */
+        .form-heading-section,
+        .form-body .form-group {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+            .form-heading-section h5,
+            .form-body .form-group > p {
+                max-width: 100%;
+                white-space: normal;
+                overflow-wrap: anywhere;
+                word-break: break-word;
+            }
+
         /* Logo + Heading rendered side by side (Form Builder "Side by Side" layout).
-                                                                   flex-wrap stays "nowrap" on purpose — with a long title, the logo and
-                                                                   title must stay on the same row; the title text shrinks/wraps inside
-                                                                   its own column (min-width:0 + overflow-wrap below) instead of the
-                                                                   whole row breaking onto a second line. */
+                                                                                           flex-wrap stays "nowrap" on purpose — with a long title, the logo and
+                                                                                           title must stay on the same row; the title text shrinks/wraps inside
+                                                                                           its own column (min-width:0 + overflow-wrap below) instead of the
+                                                                                           whole row breaking onto a second line. */
         .form-logo-heading-row {
             display: flex;
             align-items: center;
@@ -485,8 +523,8 @@
                 }
 
         /* Below ~560px there simply isn't room for logo + title on one
-                                                                       line without the title becoming unreadable — stack them here,
-                                                                       and only here, as a last resort. */
+                                                                                               line without the title becoming unreadable — stack them here,
+                                                                                               and only here, as a last resort. */
         @@media (max-width: 560px) {
             .form-logo-heading-row {
                 flex-wrap: wrap;
@@ -500,7 +538,7 @@
         /* ✅ ADDED — payment field styling */
         .payment-box {
             /* ✅ CHANGED — darker, more prominent border since Payment is the
-                       most important section of the form. */
+                                               most important section of the form. */
             border: 1px solid #1c1d1f;
             border-radius: 10px;
             padding: 16px;
@@ -513,7 +551,7 @@
             }
 
         /* ✅ ADDED — Payment's own label: bold + black, since it's the
-                   section most likely to make or break a submission. */
+                                           section most likely to make or break a submission. */
         .zfb-payment-heading {
             font-weight: 800 !important;
             color: #000 !important;
@@ -528,11 +566,11 @@
         }
 
         /* ✅ ADDED — invisible overlay that intercepts the first click on the PayPal button so
-                                                                                           required-field/captcha validation runs BEFORE PayPal's popup ever opens. Without this,
-                                                                                           PayPal pre-opens a blank popup window on every click (to dodge popup blockers) and only
-                                                                                           closes it afterwards if validation fails — causing the popup to visibly flash open and
-                                                                                           shut. Once validation passes the overlay hides itself so the real button becomes
-                                                                                           clickable. */
+                                                                                                                   required-field/captcha validation runs BEFORE PayPal's popup ever opens. Without this,
+                                                                                                                   PayPal pre-opens a blank popup window on every click (to dodge popup blockers) and only
+                                                                                                                   closes it afterwards if validation fails — causing the popup to visibly flash open and
+                                                                                                                   shut. Once validation passes the overlay hides itself so the real button becomes
+                                                                                                                   clickable. */
         .paypal-click-guard {
             position: absolute;
             inset: 0;
@@ -559,8 +597,8 @@
             }
 
         /* ✅ CHANGED — refresh button used to float on top of the canvas (top-right corner),
-                                                                                           which clipped/obscured the last captcha character. Moved it off the image entirely
-                                                                                           and attached it to the textbox as an input-group addon instead. */
+                                                                                                                   which clipped/obscured the last captcha character. Moved it off the image entirely
+                                                                                                                   and attached it to the textbox as an input-group addon instead. */
         .jotcaptcha-input-group {
             max-width: 220px;
         }
@@ -619,9 +657,9 @@
                 }
 
                     /* ✅ FIXED — the field itself is a .form-group nested inside the
-                                                       half-width column, so it was picking up the column's padding and
-                                                       margin a second time (boxes narrower than full-width ones and a
-                                                       double gap under every side-by-side row). */
+                                                                               half-width column, so it was picking up the column's padding and
+                                                                               margin a second time (boxes narrower than full-width ones and a
+                                                                               double gap under every side-by-side row). */
                     .form-row .form-group.half > .form-group {
                         padding: 0;
                         max-width: 100%;
@@ -668,10 +706,10 @@
             }
 
         /* ✅ ADDED — Captcha field's own Label Alignment (left/center/right),
-                                                   set per-field in Field Properties. This is separate from the
-                                                   form-wide .label-left/.label-right rules above — it positions the
-                                                   captcha's label relative to its widget (reCAPTCHA / hCaptcha /
-                                                   Image Captcha), matching the Form Builder canvas preview. */
+                                                                           set per-field in Field Properties. This is separate from the
+                                                                           form-wide .label-left/.label-right rules above — it positions the
+                                                                           captcha's label relative to its widget (reCAPTCHA / hCaptcha /
+                                                                           Image Captcha), matching the Form Builder canvas preview. */
         .captcha-group {
             display: flex;
             flex-direction: column;
@@ -716,9 +754,9 @@
                 }
 
         /* ✅ ADDED — matches the Form Builder's field padding so the Country /
-                                                   State select2 dropdowns don't sit taller/shorter than every other
-                                                   field (they were rendering with select2's own default 28px-tall
-                                                   box instead of the form's normal 10px/12px padding). */
+                                                                           State select2 dropdowns don't sit taller/shorter than every other
+                                                                           field (they were rendering with select2's own default 28px-tall
+                                                                           box instead of the form's normal 10px/12px padding). */
         .select2-container--default .select2-selection--single {
             height: auto;
             border: 1px solid #d7dce1;
@@ -757,7 +795,7 @@
 
         .form-group.label-top .form-label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 13px;
         }
 
         .form-closed-wrap {
@@ -789,8 +827,8 @@
     </style>
 </head>
 <body>
-    <script src="Scripts/Admin/form-client-validate.js"></script>
-    <script src="Scripts/Admin/form-payment-gateway.js"></script>
+    <script src="~/Areas/FormBuilder/Content/Scripts/form-client-validate.js"></script>
+    <script src="~/Areas/FormBuilder/Content/Scripts/form-payment-gateway.js"></script>
     <div class="form-card">
         @if (ViewBag.FormClosed == true)
         {
@@ -816,8 +854,10 @@
             var logoBgColor = "";
             var logoAlignment = "center";
             var logoAltText = "";
-            var submitButtonText = "Submit";   // ✅ ADDED — server-side fallback so the saved text shows even before JS runs
-            var submitButtonAlign = "center";  // ✅ ADDED — server-side fallback for button alignment, same pattern as logoAlignment
+            var logoBottomSpacing = "20";
+            var logoBoxCss = "";
+            var submitButtonText = "Submit";
+            var submitButtonAlign = "center";
             if (!string.IsNullOrEmpty(Model.DesignJson))
             {
                 try
@@ -826,6 +866,18 @@
                     if (designObj["logoBgColor"] != null) logoBgColor = designObj["logoBgColor"].ToString();
                     if (designObj["logoAlignment"] != null) logoAlignment = designObj["logoAlignment"].ToString();
                     if (designObj["logoAltText"] != null) logoAltText = designObj["logoAltText"].ToString();
+                    if (designObj["logoBottomSpacing"] != null) logoBottomSpacing = designObj["logoBottomSpacing"].ToString();
+
+                    foreach (var boxSide in new[] { "top", "right", "bottom", "left" })
+                    {
+                        var padTok = designObj["logoPadding"] as Newtonsoft.Json.Linq.JObject;
+                        var marTok = designObj["logoMargin"] as Newtonsoft.Json.Linq.JObject;
+                        int boxVal;
+                        if (padTok != null && padTok[boxSide] != null && int.TryParse(padTok[boxSide].ToString(), out boxVal))
+                            logoBoxCss += "padding-" + boxSide + ":" + boxVal + "px;";
+                        if (marTok != null && marTok[boxSide] != null && int.TryParse(marTok[boxSide].ToString(), out boxVal))
+                            logoBoxCss += "margin-" + boxSide + ":" + boxVal + "px;";
+                    }
                     if (designObj["submitButtonText"] != null && !string.IsNullOrWhiteSpace(designObj["submitButtonText"].ToString()))
                         submitButtonText = designObj["submitButtonText"].ToString();
                     if (designObj["submitButtonAlign"] != null && !string.IsNullOrWhiteSpace(designObj["submitButtonAlign"].ToString()))
@@ -839,27 +891,19 @@
             {
                 <div class="form-logo-wrap"
                      style="background-color: @(string.IsNullOrEmpty(logoBgColor) ? "transparent" : logoBgColor);
-                                                                                                                text-align: @(logoAlignment == "left" ? "left" : logoAlignment == "right" ? "right" : "center");">
+                                                                                                                                        text-align: @(logoAlignment == "left" ? "left" : logoAlignment == "right" ? "right" : "center");
+                                                                                                                                        padding-bottom: @(logoBottomSpacing)px;@Html.Raw(logoBoxCss)">
                     <img src="@Model.LogoUrl"
                          alt="@(string.IsNullOrEmpty(logoAltText) ? "Form Logo" : logoAltText)"
                          style="@(Model.LogoHeight.HasValue ? $"height:{Model.LogoHeight}px;" : "max-height:110px;")@(Model.LogoWidth.HasValue ? $"width:{Model.LogoWidth}px;" : "width:auto;")" />
                 </div>
             }
 
-            @* ✅ REMOVED — the old static "<h3>@Model.Title</h3>" title block.
-               The form title is now the first (isFormTitle) heading field
-               inside the JSON schema (see zfb-formbuilder.js), and is
-               rendered further down by the schema.forEach() loop into
-               #formFieldsContainer as ".form-heading-group". Keeping this
-               static block too produced a duplicate title AND was the
-               reason "Side by Side" logo layout never actually worked:
-               applyLogoHeadingLayout() below only relocates the schema's
-               heading element next to the logo, so this separate static
-               block was always left behind in its own fixed spot beneath
-               the logo, making the title look like it "fell to the
-               bottom" instead of sitting beside the logo. *@
+
             <div class="form-body">
                 <form id="dynamicForm" novalidate>
+                    <input type="text" name="hp_website" id="hp_website" value="" style="position:absolute;left:-9999px;top:-9999px;" tabindex="-1" autocomplete="off" aria-hidden="true" />
+                    <input type="hidden" id="formLoadedAt" value="@DateTime.UtcNow.ToString("o")" />
                     <div id="formFieldsContainer"></div>
                     <div class="submit-wrap" style="text-align:@(submitButtonAlign == "left" ? "left" : submitButtonAlign == "right" ? "right" : "center");">
                         <button type="submit" class="btn btn-submit-form">@submitButtonText</button>
@@ -873,16 +917,7 @@
     <script>
         const schema = @Html.Raw(Model.FormSchema);
 
-        // ✅ ADDED — Payment / Captcha / Terms & Conditions must only ever
-        // appear on the LAST page of a multi-page form, right before
-        // Submit — same rule the Form Builder enforces while the admin is
-        // dragging fields around. Enforce it again here, defensively, at
-        // render time: even if a form saved before this rule existed (or
-        // was edited some other way) has one of these fields sitting on an
-        // earlier page, pull it forward onto the last page before anything
-        // renders or wireUpMultiPageForm() splits the pages, so the live
-        // public form never shows Payment/Captcha/Terms except on the
-        // final step.
+
         (function enforceLastPageFieldsOnRender(fields) {
             const LAST_PAGE_ONLY_TYPES = ['payment', 'captcha', 'terms'];
 
@@ -905,6 +940,7 @@
         })(schema);
 
         const formId = @Model.FormId;
+        const encryptedFormId = '@AWSFormBuilder.Areas.FormBuilder.BLL.FormLinkObfuscator.EncryptFormId(Model.FormId)'; // ✅ used for URLs the user can see (address bar), so the raw integer id is never exposed there
         const container = document.getElementById('formFieldsContainer');
         const design = @Html.Raw(designJson);   // ✅ ADDED — { pageColor, pageImageUrl, formColor, formImageUrl, fontColor, inputBackground }
         const formConditions = @Html.Raw(conditionsJson);   // ✅ ADDED — [{id, triggerFieldId, operator, triggerValue, action, targetFieldIds}, ...]
@@ -1010,7 +1046,20 @@
             }
 
             if (d.fontColor) {
-                document.querySelectorAll('.form-label, h3, h5, .text-muted').forEach(el => el.style.color = d.fontColor);
+                // ✅ FIX — this form-wide Font Color used to include h5 in its
+                // selector, which runs AFTER every heading field's own <h5> is
+                // built (schema.forEach() above already wrote its inline
+                // color: the field's own "Heading Text Color", or #1c2b39 by
+                // default). Since inline styles set later win, this line was
+                // silently overwriting that per-heading color with the global
+                // one on every render - so a heading set to white here always
+                // came back looking like the default dark text on the live
+                // form, even though it showed correctly while editing in the
+                // Form Builder (whose own font-color pass only ever touched
+                // field labels, never h5). Headings manage their own color
+                // through their dedicated field property, so they're excluded
+                // from this global pass entirely.
+                document.querySelectorAll('.form-label, h3, .text-muted').forEach(el => el.style.color = d.fontColor);
             }
 
             if (d.inputBackground) {
@@ -1072,7 +1121,9 @@
             // Properties, which used the label-left/label-right .form-group rules
             // below to reposition themselves — clobbering whatever the captcha's own
             // alignment had just set.
-            if (d.labelAlignment && d.labelAlignment !== 'top') {
+            // ✅ CHANGED — the Label Alignment option was removed from Form Designer;
+            // a previously saved left/right value is ignored (labels stay on top).
+            if (false && d.labelAlignment && d.labelAlignment !== 'top') {
                 document.querySelectorAll('.form-group:not(.form-heading-group):not(.captcha-group)').forEach(el => {
                     // ✅ ADDED — floating-label fields (and their wrappers) keep the in-box style
                     if (el.classList.contains('zfb-floating-group') || el.querySelector('.zfb-floating-group')) return;
@@ -1313,6 +1364,23 @@
             halfBuffer = [];
         }
 
+        // ✅ ADDED — per-side Padding / Margin set in the Form Builder
+        // (field.padding / field.margin = { top, right, bottom, left }).
+        // Used for Heading, Paragraph and Captcha. A side that was never
+        // set is skipped, so the normal stylesheet spacing still applies.
+        function zfbApplyFieldSpacing(el, field) {
+            ['padding', 'margin'].forEach(kind => {
+                const box = field && field[kind];
+                if (!box) return;
+                ['top', 'right', 'bottom', 'left'].forEach(side => {
+                    const v = parseInt(box[side], 10);
+                    if (!isNaN(v)) {
+                        el.style[kind + side.charAt(0).toUpperCase() + side.slice(1)] = v + 'px';
+                    }
+                });
+            });
+        }
+
         schema.forEach(field => {
             if (field.type === 'heading') {
                 flushHalfBuffer();
@@ -1324,6 +1392,8 @@
                 const fs = field.headingFontSize || 20;
                 const align = field.headingTextAlign || 'left';
                 const ff = field.headingFontFamily || 'inherit';
+                const mb = (field.headingMarginBottom ?? 22);
+                const pb = (field.headingPaddingBottom ?? 0);
 
                 // ✅ ADDED — per-heading font choices (Poppins, Playfair Display,
                 // Courier Prime, ...) are Google Fonts too, so fetch them.
@@ -1332,6 +1402,9 @@
                 }
 
                 wrapper.style.backgroundColor = bg;
+                wrapper.style.marginBottom = mb + 'px';
+                wrapper.style.paddingBottom = pb + 'px';
+                zfbApplyFieldSpacing(wrapper, field);   // ✅ ADDED — Top/Right/Bottom/Left Padding + Margin
                 wrapper.innerHTML = `<h5 style="color:${fg};font-size:${fs}px;font-family:${ff};text-align:${align};width:100%;">${field.label}</h5>`;
                 container.appendChild(wrapper);
                 return;
@@ -1343,6 +1416,7 @@
                 wrapper.className = 'form-group';
                 wrapper.setAttribute('data-field-id', field.id);   // ✅ ADDED — lets Conditions target paragraphs for show/hide
                 wrapper.innerHTML = `<p class="text-muted">${field.label}</p>`;
+                zfbApplyFieldSpacing(wrapper, field);   // ✅ ADDED — Top/Right/Bottom/Left Padding + Margin
                 container.appendChild(wrapper);
                 return;
             }
@@ -1486,13 +1560,13 @@
                             <input type="text" class="form-control" placeholder=" " data-field-id="${field.id}_street" ${field.required ? 'required' : ''} />
                         </div>
                         <div class="zfb-sub-row">
-                            <div class="zfb-floating-group zfb-sub-group">
-                                <label class="form-label">City</label>
-                                <input type="text" class="form-control" placeholder=" " data-field-id="${field.id}_city" />
+                                                        <div class="zfb-floating-group zfb-sub-group">
+                                <label class="form-label">City${field.required ? ' <span class="text-danger">*</span>' : ''}</label>
+                                <input type="text" class="form-control" placeholder=" " data-field-id="${field.id}_city" ${field.required ? 'required' : ''} />
                             </div>
                             <div class="zfb-floating-group zfb-sub-group">
-                                <label class="form-label">Zip</label>
-                                <input type="text" class="form-control" placeholder=" " data-field-id="${field.id}_zip" />
+                                <label class="form-label">Zip${field.required ? ' <span class="text-danger">*</span>' : ''}</label>
+                                <input type="text" class="form-control" placeholder=" " data-field-id="${field.id}_zip" ${field.required ? 'required' : ''} />
                             </div>
                         </div>`;
                         fieldEl.appendChild(addrContainer);
@@ -1501,8 +1575,8 @@
                     addrContainer.innerHTML = `
                         <input type="text" class="form-control mb-2" placeholder="Street Address" data-field-id="${field.id}_street" ${field.required ? 'required' : ''} />
                         <div class="d-flex gap-2">
-                            <input type="text" class="form-control" placeholder="City" data-field-id="${field.id}_city" />
-                            <input type="text" class="form-control" placeholder="Zip" data-field-id="${field.id}_zip" />
+                                                       <input type="text" class="form-control" placeholder="City" data-field-id="${field.id}_city" ${field.required ? 'required' : ''} />
+                            <input type="text" class="form-control" placeholder="Zip" data-field-id="${field.id}_zip" ${field.required ? 'required' : ''} />
                         </div>
                     `;
                     fieldEl.appendChild(addrContainer);
@@ -1581,13 +1655,14 @@
                     break;
 
                 case 'radio':
+                    fieldEl.classList.add('zfb-radio-field'); // ✅ ADDED — radio label/gap styling
                     const radioContainer = document.createElement('div');
                     if (field.options) {
                         field.options.forEach((opt, i) => {
                             const div = document.createElement('div');
                             div.className = 'form-check';
                             div.innerHTML = `
-                                <input class="form-check-input" type="radio" name="${field.id}" value="${opt}" ${i === 0 && field.required ? 'required' : ''}>
+                                <input class="form-check-input" type="radio" name="${field.id}" value="${opt}" ${i === 0 && field.required ? 'required' : ''} ${i === 0 ? 'checked' : ''}>
                                 <label class="form-check-label">${opt}</label>
                             `;
                             radioContainer.appendChild(div);
@@ -1746,6 +1821,7 @@
                     // builder canvas uses (label.classList / captcha-group below).
                     const captchaAlignment = field.labelAlignment || 'center';
                     fieldEl.classList.add('captcha-group', 'captcha-align-' + captchaAlignment);
+                    zfbApplyFieldSpacing(fieldEl, field);   // ✅ ADDED — Top/Right/Bottom/Left Padding + Margin
                     label.classList.add('captcha-field-label');
 
                     const captchaBox = document.createElement('div');
@@ -1890,6 +1966,39 @@
             row.appendChild(logoWrap);
             row.appendChild(firstFieldGroup);
 
+            // ✅ FIX — mirrors the same fix in the Form Builder canvas
+            // (applyLogoHeadingLayout in zfb-formbuilder.js). The Background
+            // Color was being painted only on .form-logo-wrap (the logo's
+            // own box, server-rendered above), which shrinks to fit the
+            // logo - so the color stopped short and left a plain/white gap
+            // behind the heading text and any empty space from Center/Right
+            // alignment. .form-logo-heading-row is full width, so move the
+            // color there instead for an edge-to-edge header strip.
+            row.style.background = (d && d.logoBgColor) || 'transparent';
+            logoWrap.style.background = 'transparent';
+
+            // ✅ ADDED — Space Below Title used to be forced to 0 in this layout
+            // (.form-logo-heading-row .form-heading-section { margin: 0 !important })
+            // so the control had no effect here. Apply it to the row itself instead,
+            // plus the new gap/side-padding controls.
+            row.style.gap = (d && d.logoHeadingGap != null ? d.logoHeadingGap : 16) + 'px';
+            row.style.paddingLeft = (d && d.logoHeadingRowPaddingX != null ? d.logoHeadingRowPaddingX : 35) + 'px';
+            row.style.paddingRight = (d && d.logoHeadingRowPaddingX != null ? d.logoHeadingRowPaddingX : 35) + 'px';
+            if (firstFieldSchema) {
+                row.style.marginBottom = (firstFieldSchema.headingMarginBottom ?? 22) + 'px';
+            }
+
+            // ✅ ADDED — the logo's Padding / Margin (per side) apply to the whole
+            // logo + heading row in this layout; same as the Form Builder canvas.
+            logoWrap.style.padding = '0';
+            ['top', 'right', 'bottom', 'left'].forEach(side => {
+                const cap = side.charAt(0).toUpperCase() + side.slice(1);
+                const pv = d && d.logoPadding ? parseInt(d.logoPadding[side], 10) : NaN;
+                const mv = d && d.logoMargin ? parseInt(d.logoMargin[side], 10) : NaN;
+                if (!isNaN(pv)) row.style['padding' + cap] = pv + 'px';
+                if (!isNaN(mv)) row.style['margin' + cap] = mv + 'px';
+            });
+
             // ✅ ADDED — the Alignment buttons (Left/Center/Right, saved as
             // d.logoAlignment) used to do nothing here: .form-heading-section
             // was pinned to "flex: 1 1 auto" (see stylesheet above), so the
@@ -1920,25 +2029,23 @@
                 logoWrap.style.setProperty('max-width', '60%', 'important');
                 logoWrap.style.margin = '0';
 
-                if (alignment === 'left') {
-                    row.style.justifyContent = 'flex-start';
+                // ✅ FIX — mirrors the same fix in the Form Builder canvas
+                // (applyLogoHeadingLayout in zfb-formbuilder.js). "Left" used
+                // to leave the heading's flex/width untouched, which fell
+                // back to the stylesheet's full-width stretch rule, so the
+                // heading didn't visually move next to the logo the way
+                // Center/Right did. All three now shrink the heading to a
+                // compact unit next to the logo and just change the row's
+                // justify-content, so the logo+heading pair always moves
+                // together as one.
+                row.style.justifyContent =
+                    alignment === 'left' ? 'flex-start' :
+                        alignment === 'right' ? 'flex-end' : 'center';
 
-                    firstFieldGroup.style.removeProperty('flex');
-                    firstFieldGroup.style.removeProperty('width');
-                    firstFieldGroup.style.removeProperty('max-width');
-                    firstFieldGroup.style.minWidth = '0';
-                } else {
-                    // Center / Right both need the heading to shrink to its
-                    // own content width so the logo+heading pair becomes one
-                    // compact unit the row can actually position with
-                    // justify-content, instead of a full-width block.
-                    row.style.justifyContent = alignment === 'right' ? 'flex-end' : 'center';
-
-                    firstFieldGroup.style.setProperty('flex', '0 1 auto', 'important');
-                    firstFieldGroup.style.setProperty('width', 'auto', 'important');
-                    firstFieldGroup.style.setProperty('max-width', '70%', 'important');
-                    firstFieldGroup.style.minWidth = '0';
-                }
+                firstFieldGroup.style.setProperty('flex', '0 1 auto', 'important');
+                firstFieldGroup.style.setProperty('width', 'auto', 'important');
+                firstFieldGroup.style.setProperty('max-width', '70%', 'important');
+                firstFieldGroup.style.minWidth = '0';
             }
         }
 
@@ -1980,10 +2087,14 @@
                     }
                     return;
                 }
-                if (field.type === 'address') {
+                              if (field.type === 'address') {
                     if (field.required) {
                         rules[field.id + '_street'] = { required: true };
+                        rules[field.id + '_city'] = { required: true };
+                        rules[field.id + '_zip'] = { required: true };
                         messages[field.id + '_street'] = { required: 'Street address is required' };
+                        messages[field.id + '_city'] = { required: 'City is required' };
+                        messages[field.id + '_zip'] = { required: 'Zip is required' };
                     }
                     return;
                 }
@@ -2190,7 +2301,23 @@
         // still reveal them later via a Show/Hide rule — condApplyShowHide already restores
         // the required state correctly when that happens.
         schema.forEach(function (field) {
-            if (field.hidden) condApplyShowHide(field.id, false);
+            if (!field.hidden) return;
+            // Existing helper (kept as-is) so Conditions can still reveal the field later.
+            condApplyShowHide(field.id, false);
+            // ✅ ADDED — also cover wrappers/controls the helper can't see (Full Name, Address,
+            // Border Label ...): hide the whole block and drop "required" on every control inside
+            // it, otherwise an invisible required box would silently block Submit
+            // (the validator runs with ignore: []).
+            const hiddenWrap = container.querySelector(
+                `.form-group[data-field-id="${field.id}"], .form-heading-group[data-field-id="${field.id}"], .zfb-border-label[data-field-id="${field.id}"]`);
+            if (!hiddenWrap) return;
+            hiddenWrap.style.display = 'none';
+            hiddenWrap.querySelectorAll('input, select, textarea').forEach(function (inp) {
+                inp.required = false;
+                if ($(inp).closest('form').data('validator')) {
+                    try { $(inp).rules('remove', 'required'); } catch (e) { }
+                }
+            });
         });
 
         // ============================================================
@@ -2306,8 +2433,6 @@
             if (wrapper) wrapper.classList.toggle('cond-field-disabled', disabled);
         }
 
-        // ✅ ADDED — "Mask Field(s)" / "Unmask Field(s)" (Enable/Require/Mask category):
-        // obscures a text-type field's value like a password field while the condition holds.
         function condApplyMask(fieldId, masked) {
             condGetControlEls(fieldId).forEach(inp => {
                 if (inp.tagName !== 'INPUT') return;
@@ -2321,8 +2446,7 @@
             });
         }
 
-        // ✅ ADDED — "Update Field" category: copies the trigger's source field value into
-        // one or more target fields while the condition holds.
+
         function condApplyCopyValue(sourceFieldId, targetFieldId) {
             if (!sourceFieldId) return;
             const sourceVal = condGetFieldValue(sourceFieldId).value;
@@ -2361,9 +2485,6 @@
         }
         initFormConditions();
 
-        // ============================================================
-        // STAR RATING HELPER
-        // ============================================================
         function setStarRating(fieldId, rating) {
             const wrap = document.querySelector(`[data-field-id="${fieldId}"]`);
             if (wrap) wrap.setAttribute('data-rating', rating);
@@ -2375,9 +2496,7 @@
             if (typeof evaluateAllConditions === 'function') evaluateAllConditions();
         }
 
-        // ============================================================
-        // PAYMENT GATEWAY INTEGRATION
-        // ============================================================
+
         const paymentField = schema.find(f => f.type === 'payment');
         let PaymentBridge = null;
 
@@ -2755,6 +2874,9 @@
         // FORM SUBMISSION
         // ============================================================
         function collectFieldData() {
+            // ✅ FIXED — the .form-group wrapper also carries data-field-id, so the old querySelector returned
+            // the wrapper <div> (no .value) and JSON.stringify dropped those keys. condGetValueEl() returns
+            // the real INPUT / SELECT / TEXTAREA (or the star-rating element).
             const data = {};
             schema.forEach(field => {
                 if (field.type === 'heading' || field.type === 'paragraph' || field.type === 'borderlabel' || field.type === 'signature' || field.type === 'payment' || field.type === 'pagebreak') return;
@@ -2768,11 +2890,11 @@
                     data[field.label] = Array.from(checkedBoxes).map(c => c.value).join(', ');
                 }
                 else if (field.type === 'firstname') {
-                    const el = document.querySelector(`[data-field-id="${field.id}"]`);
+                    const el = condGetValueEl(field.id);
                     data[field.label] = el ? el.value : '';
                 }
                 else if (field.type === 'lastname') {
-                    const el = document.querySelector(`[data-field-id="${field.id}"]`);
+                    const el = condGetValueEl(field.id);
                     data[field.label] = el ? el.value : '';
                 }
                 else if (field.type === 'fullname') {
@@ -2790,14 +2912,14 @@
                     data[field.label] = `${street ? street.value : ''}, ${city ? city.value : ''} ${zip ? zip.value : ''}`.trim();
                 }
                 else if (field.type === 'starrating') {
-                    const wrap = document.querySelector(`[data-field-id="${field.id}"]`);
+                    const wrap = condGetValueEl(field.id);
                     data[field.label] = wrap ? wrap.getAttribute('data-rating') : '0';
                 }
                 else if (field.type === 'fileupload' || field.type === 'image') {
                     // ✅ CHANGED — use the real uploaded URL (set by uploadPendingFiles() during
                     // submit) so the submission can be previewed later. Falls back to just the
                     // filename if, for some reason, the upload never happened.
-                    const el = document.querySelector(`[data-field-id="${field.id}"]`);
+                    const el = condGetValueEl(field.id);
                     data[field.label] = el && el.files.length ? (el.dataset.uploadedUrl || el.files[0].name) : '';
                 }
                 else if (field.type === 'captcha') {
@@ -2805,7 +2927,7 @@
                     data[field.label] = isCaptchaVerified(field) ? 'Verified' : 'Not verified';
                 }
                 else {
-                    const el = document.querySelector(`[data-field-id="${field.id}"]`);
+                    const el = condGetValueEl(field.id);
                     if (field.type === 'terms') {
                         data[field.label] = el ? el.checked : false;
                     } else {
@@ -2916,12 +3038,12 @@
         async function uploadPendingFiles() {
             const fileFields = schema.filter(f => f.type === 'fileupload' || f.type === 'image');
             for (const field of fileFields) {
-                const el = document.querySelector(`[data-field-id="${field.id}"]`);
+                const el = condGetValueEl(field.id);
                 if (!el || !el.files || !el.files.length || el.dataset.uploadedUrl) continue;
                 try {
                     const fd = new FormData();
                     fd.append('file', el.files[0]);
-                    const res = await fetch('/Admin/Form/UploadFormFieldFile', { method: 'POST', body: fd });
+                    const res = await fetch('/FormBuilder/Form/UploadFormFieldFile', { method: 'POST', body: fd });
                     const result = await res.json();
                     if (result.success) {
                         el.dataset.uploadedUrl = result.url;
@@ -2961,12 +3083,15 @@
             const formData = collectFieldData();
             const payload = {
                 data: formData,
-                payment: paymentResult || null
+                payment: paymentResult || null,
+                // ✅ ADDED — bot-detection fields, read by SubmitForm on the server
+                hpCheck: document.getElementById('hp_website')?.value || '',
+                formLoadedAt: document.getElementById('formLoadedAt')?.value || ''
             };
 
             console.log('🔄 Submitting payload:', JSON.stringify(payload, null, 2));
 
-            fetch('/Admin/Form/SubmitForm?formId=' + formId, {
+            fetch('/FormBuilder/Form/SubmitForm?formId=' + formId, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -2974,7 +3099,7 @@
                 .then(res => res.json())
                 .then(result => {
                     if (result.success) {
-                        window.location.href = '/Admin/Form/ThankYou/' + formId;
+                        window.location.href = '/FormBuilder/Form/ThankYou/' + encryptedFormId;
                     } else {
                         alert('Submission failed: ' + result.message);
                         if (submitBtn) {

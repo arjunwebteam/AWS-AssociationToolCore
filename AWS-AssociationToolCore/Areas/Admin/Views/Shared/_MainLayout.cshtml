@@ -22,6 +22,9 @@
     string userIdStr = Context.Session.GetString("UserId") ?? "0";
     long.TryParse(userIdStr, out long userId);
 
+    bool isImpersonating = User.FindFirst("IsImpersonating")?.Value == "true";
+    string impersonatorName = User.FindFirst("ImpersonatorName")?.Value ?? "";
+
     // ✅ Load menu data using Session values
     if (userId > 0)
     {
@@ -576,6 +579,120 @@
         <!--end sidebar -->
         <!--start content-->
         <main class="page-content">
+            @if (isImpersonating)
+            {
+                string impUserName = !string.IsNullOrWhiteSpace(objuser?.UserName) ? objuser.UserName : userName;
+                string impRoleName = objuser?.RoleName ?? "";
+                string impInitial = string.IsNullOrWhiteSpace(impUserName) ? "?" : impUserName.Trim().Substring(0, 1).ToUpper();
+
+                <style>
+                    .impersonation-banner {
+                        position: sticky;
+                        top: 70px;
+                        z-index: 10;
+                        display: flex;
+                        align-items: center;
+                        gap: 1rem;
+                        flex-wrap: wrap;
+                        margin-bottom: 1.25rem;
+                        padding: .75rem 1rem;
+                        border: 1px solid #f5d27a;
+                        border-left: 4px solid #f59e0b;
+                        border-radius: .5rem;
+                        background: linear-gradient(90deg, #fff8e6 0%, #fffdf7 100%);
+                        box-shadow: 0 2px 6px rgba(0, 0, 0, .06);
+                        color: #5c4300;
+                    }
+                    .impersonation-banner__avatar {
+                        flex: 0 0 auto;
+                        width: 40px;
+                        height: 40px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: #f59e0b;
+                        color: #fff;
+                        font-weight: 600;
+                        font-size: 1.1rem;
+                    }
+                    .impersonation-banner__body { flex: 1 1 260px; min-width: 0; line-height: 1.35; }
+                    .impersonation-banner__label {
+                        display: inline-flex;
+                        align-items: center;
+                        gap: .35rem;
+                        font-size: .7rem;
+                        font-weight: 700;
+                        letter-spacing: .06em;
+                        text-transform: uppercase;
+                        color: #b45309;
+                    }
+                    .impersonation-banner__label .dot {
+                        width: 7px; height: 7px; border-radius: 50%;
+                        background: #f59e0b;
+                        animation: impersonation-pulse 1.6s ease-in-out infinite;
+                    }
+                    .impersonation-banner__title { font-size: .95rem; color: #3d2d00; }
+                    .impersonation-banner__title strong { font-weight: 600; }
+                    .impersonation-banner__role {
+                        display: inline-block;
+                        margin-left: .35rem;
+                        padding: .1rem .5rem;
+                        border-radius: 999px;
+                        background: rgba(245, 158, 11, .15);
+                        color: #92400e;
+                        font-size: .75rem;
+                        font-weight: 600;
+                        vertical-align: middle;
+                    }
+                    .impersonation-banner__meta { font-size: .8rem; color: #7a5a10; }
+                    .impersonation-banner__action { flex: 0 0 auto; white-space: nowrap; }
+                    @@keyframes impersonation-pulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: .35; }
+                    }
+                    @@media (prefers-reduced-motion: reduce) {
+                        .impersonation-banner__label .dot { animation: none; }
+                    }
+                    @@media (max-width: 576px) {
+                        .impersonation-banner { position: static; }
+                        .impersonation-banner__action,
+                        .impersonation-banner__action .btn { width: 100%; }
+                    }
+                    html.dark-theme .impersonation-banner {
+                        background: linear-gradient(90deg, #3a2e12 0%, #2b2618 100%);
+                        border-color: #6b5420;
+                        border-left-color: #f59e0b;
+                        color: #f3e2b3;
+                    }
+                    html.dark-theme .impersonation-banner__title { color: #fff3d1; }
+                    html.dark-theme .impersonation-banner__meta { color: #d9c48e; }
+                    html.dark-theme .impersonation-banner__role { color: #fcd34d; }
+                </style>
+
+                <div class="impersonation-banner" role="status" aria-live="polite">
+                    <div class="impersonation-banner__avatar" aria-hidden="true">@impInitial</div>
+                    <div class="impersonation-banner__body">
+                        <div class="impersonation-banner__label">
+                            <span class="dot" aria-hidden="true"></span> Impersonation mode
+                        </div>
+                        <div class="impersonation-banner__title">
+                            Viewing as <strong>@impUserName</strong>
+                            @if (!string.IsNullOrWhiteSpace(impRoleName))
+                            {
+                                <span class="impersonation-banner__role">@impRoleName</span>
+                            }
+                        </div>
+                     
+                    </div>
+                    <div class="impersonation-banner__action">
+                        <a href="@Url.Action("StopImpersonation", "Account", new { area = "Admin" })"
+                           class="btn btn-sm btn-warning fw-semibold px-3">
+                            <i class="bi bi-box-arrow-left me-1"></i> Return to Admin
+                        </a>
+                    </div>
+                </div>
+            }
             <!--breadcrumb-->
             @RenderBody()
 

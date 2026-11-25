@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-
+using NPOI.SS.Formula.Functions;
 using System;
 using System;
 using System.Collections.Generic;
@@ -26,10 +26,6 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
-using Color = System.Drawing.Color;
-using Rectangle = System.Drawing.Rectangle;
-using Point = System.Drawing.Point;
-using PointF = System.Drawing.PointF;
 namespace AWSFormBuilder.Areas.FormBuilder.Controllers
 {
     //monday ofter- mahi//
@@ -452,7 +448,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                     {
                         if (id == "reactivate")
                         {
-                            Guid guid = AWS_AssociationToolCore.BLL.Common.generateGUID();
+                            Guid guid = FormBuilder.BLL.Common.generateGUID();
                             objuser.IsActivated = false;
                             objuser.RegistrationGUID = guid;
                             Int64 _guidStatus = _user.UpdateRegistrationGUID(objuser.UserId, "false", guid);
@@ -489,7 +485,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                                     {
                                         Int64 _guidStatus = _user.UpdateRegistrationGUID(objuser.UserId, "true", Guid.Empty);
 
-                                        string loginUrl = objappinfo.BaseUrl + "Admin/Account/Logon";
+                                        string loginUrl = objappinfo.BaseUrl + "FormBuilder/Account/Logon";
                                         string activatedContent =
                                             "<p style=\"margin:0 0 12px 0;\">Dear <strong>" + objuser.UserName + "</strong>,</p>" +
                                             "<p style=\"margin:0 0 6px 0;\">Your account is activated and your password has been reset. Please find your login details below.</p>" +
@@ -529,87 +525,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
             }
             return View();
         }
-        private string BuildEmailTemplate(string siteName, string title, string contentHtml)
-        {
-            return $@"
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset=""UTF-8"">
-<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-</head>
-<body style=""margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Arial,Helvetica,sans-serif;"">
-  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""background-color:#f4f6f9;padding:30px 12px;"">
-    <tr>
-      <td align=""center"">
-        <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""max-width:560px;background-color:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);"">
-          <tr>
-            <td align=""center"" style=""background-color:#1e3a8a;padding:26px 20px;"">
-              <h1 style=""margin:0;font-size:22px;line-height:28px;color:#ffffff;font-weight:600;"">{siteName}</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style=""padding:32px 30px 10px 30px;color:#333333;font-size:15px;line-height:24px;"">
-              <h2 style=""margin:0 0 18px 0;font-size:20px;line-height:26px;color:#1e3a8a;font-weight:600;"">{title}</h2>
-              {contentHtml}
-            </td>
-          </tr>
-          <tr>
-            <td style=""padding:20px 30px 30px 30px;color:#333333;font-size:15px;line-height:24px;"">
-              Thank You,<br /><strong>Admin Team</strong>
-            </td>
-          </tr>
-          <tr>
-            <td align=""center"" style=""background-color:#f9fafb;padding:16px 20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:18px;"">
-              This is an automated email, please do not reply.<br />&copy; {DateTime.Now.Year} {siteName}. All rights reserved.
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>";
-        }
 
-        private string BuildEmailButton(string url, string text)
-        {
-            return $@"
-<table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" align=""center"" style=""margin:26px auto;"">
-  <tr>
-    <td align=""center"" bgcolor=""#2563eb"" style=""border-radius:6px;"">
-      <a href=""{url}"" target=""_blank"" style=""display:inline-block;padding:14px 36px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;background-color:#2563eb;"">{text}</a>
-    </td>
-  </tr>
-</table>";
-        }
-
-        private string BuildCredentialsBox(string email, string password)
-        {
-            return $@"
-<table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""margin:20px 0;background-color:#f1f5f9;border:1px solid #dbe3ee;border-left:4px solid #2563eb;border-radius:6px;"">
-  <tr>
-    <td style=""padding:18px 20px;"">
-      <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"">
-        <tr>
-          <td style=""padding:6px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;"">Email</td>
-        </tr>
-        <tr>
-          <td style=""padding:0 0 14px 0;font-size:15px;color:#111827;font-weight:600;word-break:break-all;"">
-            <a href=""mailto:{email}"" style=""color:#111827;text-decoration:none;"">{email}</a>
-          </td>
-        </tr>
-        <tr>
-          <td style=""padding:6px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;"">Password</td>
-        </tr>
-        <tr>
-          <td style=""padding:0;font-size:16px;color:#111827;font-weight:700;font-family:Consolas,'Courier New',monospace;letter-spacing:1px;"">{password}</td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>";
-        }
         //public ActionResult UserValidate(string name, string id = "")
         //{
         //    try
@@ -712,7 +628,87 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                 return Json(new { ok = false, message = "<div class=\"alert alert-danger alert-dismissable\">Failed transaction.</div>" });
             }
         }
+        private string BuildEmailTemplate(string siteName, string title, string contentHtml)
+        {
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=""UTF-8"">
+<meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
+</head>
+<body style=""margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Arial,Helvetica,sans-serif;"">
+  <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""background-color:#f4f6f9;padding:30px 12px;"">
+    <tr>
+      <td align=""center"">
+        <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""max-width:560px;background-color:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);"">
+          <tr>
+            <td align=""center"" style=""background-color:#1e3a8a;padding:26px 20px;"">
+              <h1 style=""margin:0;font-size:22px;line-height:28px;color:#ffffff;font-weight:600;"">{siteName}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:32px 30px 10px 30px;color:#333333;font-size:15px;line-height:24px;"">
+              <h2 style=""margin:0 0 18px 0;font-size:20px;line-height:26px;color:#1e3a8a;font-weight:600;"">{title}</h2>
+              {contentHtml}
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:20px 30px 30px 30px;color:#333333;font-size:15px;line-height:24px;"">
+              Thank You,<br /><strong>Admin Team</strong>
+            </td>
+          </tr>
+          <tr>
+            <td align=""center"" style=""background-color:#f9fafb;padding:16px 20px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px;line-height:18px;"">
+              This is an automated email, please do not reply.<br />&copy; {DateTime.Now.Year} {siteName}. All rights reserved.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>";
+        }
 
+        private string BuildEmailButton(string url, string text)
+        {
+            return $@"
+<table role=""presentation"" cellspacing=""0"" cellpadding=""0"" border=""0"" align=""center"" style=""margin:26px auto;"">
+  <tr>
+    <td align=""center"" bgcolor=""#2563eb"" style=""border-radius:6px;"">
+      <a href=""{url}"" target=""_blank"" style=""display:inline-block;padding:14px 36px;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:6px;background-color:#2563eb;"">{text}</a>
+    </td>
+  </tr>
+</table>";
+        }
+
+        private string BuildCredentialsBox(string email, string password)
+        {
+            return $@"
+<table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"" style=""margin:20px 0;background-color:#f1f5f9;border:1px solid #dbe3ee;border-left:4px solid #2563eb;border-radius:6px;"">
+  <tr>
+    <td style=""padding:18px 20px;"">
+      <table role=""presentation"" width=""100%"" cellspacing=""0"" cellpadding=""0"" border=""0"">
+        <tr>
+          <td style=""padding:6px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;"">Email</td>
+        </tr>
+        <tr>
+          <td style=""padding:0 0 14px 0;font-size:15px;color:#111827;font-weight:600;word-break:break-all;"">
+            <a href=""mailto:{email}"" style=""color:#111827;text-decoration:none;"">{email}</a>
+          </td>
+        </tr>
+        <tr>
+          <td style=""padding:6px 0;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;"">Password</td>
+        </tr>
+        <tr>
+          <td style=""padding:0;font-size:16px;color:#111827;font-weight:700;font-family:Consolas,'Courier New',monospace;letter-spacing:1px;"">{password}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>";
+        }
         #region CAPTCHA
 
         #region CAPTCHA

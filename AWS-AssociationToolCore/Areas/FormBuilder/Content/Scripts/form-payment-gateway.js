@@ -1,5 +1,5 @@
 /* ===========================================================
-   AWS_AssociationToolCore Form Builder - Payment Gateway Bridge
+   Temple360 Form Builder - Payment Gateway Bridge
    Mounts the correct gateway's hosted card fields into
    #t360PaymentMount and produces a { txnId, status } result
    before the form actually posts to /FormBuilder/Submit.

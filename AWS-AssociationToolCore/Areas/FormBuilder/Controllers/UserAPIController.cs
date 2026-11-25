@@ -20,7 +20,6 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
             {
                 var now = AWSFormBuilder.Areas.FormBuilder.BLL.Common.GetTimeZoneAdjustedDateTime();
 
-                // 1) Forms DB lo role undo chudu, lekapothe create cheyyi
                 var rolesBll = new AWSFormBuilder.Areas.FormBuilder.BLL.Roles();
                 int s = 0;
                 var role = rolesBll.RolesGetByRoleName(req.RoleName, ref s);
@@ -39,7 +38,6 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                 if (role == null || role.RoleId == 0)
                     return StatusCode(500, new { ok = false, message = "Could not create role in Forms DB" });
 
-                // 2) User insert (UsersProfileInsert)
                 var minDate = new DateTime(1900, 1, 1);
                 SqlParameter P(string n, object v) => new SqlParameter(n, v ?? DBNull.Value);
                 var qStatus = new SqlParameter("@QStatus", SqlDbType.Int) { Direction = ParameterDirection.Output };
@@ -80,7 +78,6 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
 
                 new AWSFormBuilder.Areas.FormBuilder.DAL.DBAccess().SP_ExecuteScalar("UsersProfileInsert", ref p);
 
-                // QStatus: 1 = inserted, 0 = already exists
                 return Ok(new { ok = true, status = Convert.ToInt32(qStatus.Value) });
             }
             catch (Exception ex)
@@ -112,7 +109,6 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                 if (status == -1)
                     return StatusCode(500, new { ok = false, message = "Remove failed in Forms DB" });
 
-                // status: 1 = removed, 0 = user forms DB lo ledu
                 return Ok(new { ok = true, status = status });
             }
             catch (Exception ex)

@@ -9,10 +9,12 @@ namespace AWSFormBuilder.Areas.FormBuilder.DAL
     {
         private readonly string _connectionString;
 
+        // MODIFIED - still works exactly as before: no-arg call uses "FormsConnectionString"
         public DBAccess() : this("FormsConnectionString")
         {
         }
 
+        // ADDED - pass a connection string key from appsettings.json, e.g. new DBAccess("FormsConnection")
         public DBAccess(string connectionName)
         {
             var configuration = new ConfigurationBuilder()
@@ -24,10 +26,12 @@ namespace AWSFormBuilder.Areas.FormBuilder.DAL
                 ?? throw new Exception(connectionName + " not found in appsettings.json");
         }
 
+        // MODIFIED - still works exactly as before: uses "FormsConnectionString"
         public DBAccess(IConfiguration configuration) : this(configuration, "FormsConnectionString")
         {
         }
 
+        // ADDED - DI-injected IConfiguration + a specific connection string key
         public DBAccess(IConfiguration configuration, string connectionName)
         {
             _connectionString = configuration.GetConnectionString(connectionName)

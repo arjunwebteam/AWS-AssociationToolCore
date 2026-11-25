@@ -201,6 +201,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
   </tr>
 </table>";
         }
+
         [HttpPost]
         //public ActionResult CreateUser(Entities.Users objUsers)
         //{
@@ -462,7 +463,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
 
             if (!canImpersonate)
             {
-                return RedirectToAction("Unauthorized", "Account", new { area = "Admin" });
+                return RedirectToAction("Unauthorized", "Account", new { area = "FormBuilder" });
             }
 
             int status = 0;
@@ -527,7 +528,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                     ExpiresUtc = DateTime.UtcNow.AddMinutes(20)
                 });
 
-            return RedirectToAction("Index", "Form", new { area = "Admin", mid = 74 });
+            return RedirectToAction("Index", "Form", new { area = "FormBuilder", mid = 74 });
         }
 
         // ============================================================
@@ -544,7 +545,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
             if (string.IsNullOrEmpty(originalAdminEmail))
             {
                 // Not currently impersonating anyone — nothing to return to.
-                return RedirectToAction("Index", "Form", new { area = "Admin", mid = 74 });
+                return RedirectToAction("Index", "Form", new { area = "FormBuilder", mid = 74 });
             }
 
             int status = 0;
@@ -555,7 +556,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                 // Original admin account no longer resolvable — safest move
                 // is to sign out completely rather than leave a broken session.
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                return RedirectToAction("LogOn", "Account", new { area = "Admin" });
+                return RedirectToAction("LogOn", "Account", new { area = "FormBuilder" });
             }
 
             var claims = new List<Claim>

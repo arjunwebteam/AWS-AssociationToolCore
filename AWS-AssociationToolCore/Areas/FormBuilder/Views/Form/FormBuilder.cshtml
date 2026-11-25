@@ -35,91 +35,91 @@
 </head>
 <script>
     @if (ViewBag.FormSchema != null)
-    {
-         <text>
-            document.addEventListener('DOMContentLoaded', function loadExistingForm() {
-            try {
-                const savedFields = JSON.parse(@Html.Raw(Json.Serialize((string)ViewBag.FormSchema)));
-                formFields = savedFields || [];
-
-
-                fieldCounter = formFields.reduce(function (max, f) {
-                    const m = /^f(\d+)$/.exec(f.id || '');
-                    return m ? Math.max(max, parseInt(m[1], 10)) : max;
-                }, 0);
-
-
-                const seenFieldIds = new Set();
-                formFields.forEach(function (f) {
-                    if (!f.id || seenFieldIds.has(f.id)) {
-                        fieldCounter++;
-                        f.id = 'f' + fieldCounter;
-                    }
-                    seenFieldIds.add(f.id);
-                });
-
-                const savedFormTitle = @Html.Raw(Json.Serialize((string)ViewBag.FormTitle));
-
-                const logoUrl = @Html.Raw(Json.Serialize((string)ViewBag.LogoUrl));
-                if (logoUrl) {
-                    document.getElementById('logoUrl').value = logoUrl;
-
-                    const savedWidth = @Html.Raw(Json.Serialize((int?)ViewBag.LogoWidth));
-                    const savedHeight = @Html.Raw(Json.Serialize((int?)ViewBag.LogoHeight));
-                    logoWidth = savedWidth || null;
-                    logoHeight = savedHeight || 110;
-
-                    updateLogoPreview(logoUrl);
-                }
-
-                const designJson = @Html.Raw(Json.Serialize((string)ViewBag.FormDesign));
-                if (designJson) {
+        {
+            <text>
+                document.addEventListener('DOMContentLoaded', function loadExistingForm() {
                     try {
-                        const savedDesign = JSON.parse(designJson);
-                        formDesign = Object.assign({}, formDesign, savedDesign || {});
+                        const savedFields = JSON.parse(@Html.Raw(Json.Serialize((string)ViewBag.FormSchema)));
+                        formFields = savedFields || [];
 
 
-                        if (typeof loadGoogleFont === 'function') {
-                            loadGoogleFont(formDesign.fontFamily);
-                        }
-                    } catch (e2) {
-                        console.error('Failed to parse saved form design', e2);
-                    }
-                }
-
-
-                const submitBtnEl = document.querySelector('.fb-submit-btn');
-                if (submitBtnEl) submitBtnEl.textContent = formDesign.submitButtonText || 'Submit';
-
-
-                const conditionsJson = @Html.Raw(Json.Serialize((string)ViewBag.FormConditions));
-                if (conditionsJson) {
-                    try {
-                        formConditions = JSON.parse(conditionsJson) || [];
-                        conditionCounter = formConditions.reduce(function (max, c) {
-                            const m = /^c(\d+)$/.exec(c.id || '');
+                        fieldCounter = formFields.reduce(function (max, f) {
+                            const m = /^f(\d+)$/.exec(f.id || '');
                             return m ? Math.max(max, parseInt(m[1], 10)) : max;
                         }, 0);
-                    } catch (e3) {
-                        console.error('Failed to parse saved conditions', e3);
+
+
+                        const seenFieldIds = new Set();
+                        formFields.forEach(function (f) {
+                            if (!f.id || seenFieldIds.has(f.id)) {
+                                fieldCounter++;
+                                f.id = 'f' + fieldCounter;
+                            }
+                            seenFieldIds.add(f.id);
+                        });
+
+                        const savedFormTitle = @Html.Raw(Json.Serialize((string)ViewBag.FormTitle));
+
+                        const logoUrl = @Html.Raw(Json.Serialize((string)ViewBag.LogoUrl));
+                        if (logoUrl) {
+                            document.getElementById('logoUrl').value = logoUrl;
+
+                            const savedWidth = @Html.Raw(Json.Serialize((int?)ViewBag.LogoWidth));
+                            const savedHeight = @Html.Raw(Json.Serialize((int?)ViewBag.LogoHeight));
+                            logoWidth = savedWidth || null;
+                            logoHeight = savedHeight || 110;
+
+                            updateLogoPreview(logoUrl);
+                        }
+
+                        const designJson = @Html.Raw(Json.Serialize((string)ViewBag.FormDesign));
+                        if (designJson) {
+                            try {
+                                const savedDesign = JSON.parse(designJson);
+                                formDesign = Object.assign({}, formDesign, savedDesign || {});
+
+        
+                                if (typeof loadGoogleFont === 'function') {
+                                    loadGoogleFont(formDesign.fontFamily);
+                                }
+                            } catch (e2) {
+                                console.error('Failed to parse saved form design', e2);
+                            }
+                        }
+
+
+                        const submitBtnEl = document.querySelector('.fb-submit-btn');
+                        if (submitBtnEl) submitBtnEl.textContent = formDesign.submitButtonText || 'Submit';
+
+
+                        const conditionsJson = @Html.Raw(Json.Serialize((string)ViewBag.FormConditions));
+                        if (conditionsJson) {
+                            try {
+                                formConditions = JSON.parse(conditionsJson) || [];
+                                conditionCounter = formConditions.reduce(function (max, c) {
+                                    const m = /^c(\d+)$/.exec(c.id || '');
+                                    return m ? Math.max(max, parseInt(m[1], 10)) : max;
+                                }, 0);
+                            } catch (e3) {
+                                console.error('Failed to parse saved conditions', e3);
+                            }
+                        }
+
+                        if (typeof ensureTitleField === 'function') {
+                            ensureTitleField(savedFormTitle);
+                        }
+                        if (typeof lastKnownFormTitle !== 'undefined') {
+                            lastKnownFormTitle = savedFormTitle || '';
+                        }
+                        if (typeof syncTitlePayloadFromField === 'function') {
+                            syncTitlePayloadFromField();
+                        }
+
+                        renderCanvas();
+                    } catch (e) {
+                        console.error('Failed to load existing form', e);
+                        alert('LOAD ERROR: ' + e.message + '\n\nLine info:\n' + (e.stack || 'no stack'));
                     }
-                }
-
-                if (typeof ensureTitleField === 'function') {
-                    ensureTitleField(savedFormTitle);
-                }
-                if (typeof lastKnownFormTitle !== 'undefined') {
-                    lastKnownFormTitle = savedFormTitle || '';
-                }
-                if (typeof syncTitlePayloadFromField === 'function') {
-                    syncTitlePayloadFromField();
-                }
-
-                renderCanvas();
-                                                                    } catch (e) {
-                    console.error('Failed to load existing form', e);
-                    alert('LOAD ERROR: ' + e.message + '\n\nLine info:\n' + (e.stack || 'no stack'));
-                }
                 });
         </text>
     }
@@ -254,7 +254,7 @@
             }
         };
 
-
+        
         window.zfbInjectedBefore = function (el) {
             var n = 0, s = el;
             while ((s = s.previousElementSibling)) { if (s.classList.contains('zfb-injected')) n++; }
@@ -717,15 +717,11 @@
 
 
     const COND_TRIGGER_EXCLUDED_TYPES = ['heading', 'paragraph', 'payment', 'captcha', 'signature', 'fullname', 'address'];
-    const COND_TARGET_EXCLUDED_TYPES = ['payment', 'captcha', 'fullname', 'address'];
+    const COND_TARGET_EXCLUDED_TYPES = ['payment', 'captcha', 'fullname'];
 
     const COND_OPERATORS = [
         { id: 'equals', label: 'Equals' },
-        { id: 'notEquals', label: 'Not Equals' },
-        { id: 'contains', label: 'Contains' },
-        { id: 'isChecked', label: 'Is Checked' },
-        { id: 'isEmpty', label: 'Is Empty' },
-        { id: 'notEmpty', label: 'Is Not Empty' }
+        { id: 'notEquals', label: 'Not Equals' }
     ];
 
     const COND_ACTIONS = [
@@ -735,15 +731,13 @@
         { id: 'optional', label: 'Make Field(s) Optional' },
         { id: 'enable', label: 'Enable Field(s)' },
         { id: 'disable', label: 'Disable Field(s)' },
-        { id: 'mask', label: 'Mask Field(s)' },
-        { id: 'unmask', label: 'Unmask Field(s)' },
         { id: 'update', label: "Copy Value Into Field(s)" }
     ];
 
 
     const COND_ACTION_GROUPS = [
         { id: 'showhide', label: 'Show/Hide Field', desc: 'Change visibility of specific form fields', actions: ['show', 'hide'] },
-        { id: 'requiremask', label: 'Enable/Require/Mask Field', desc: 'Require or disable a field, or set a mask', actions: ['require', 'optional', 'enable', 'disable', 'mask', 'unmask'] },
+        { id: 'requiremask', label: 'Enable/Require Field', desc: 'Require or disable a field', actions: ['require', 'optional', 'enable', 'disable'] },
         { id: 'update', label: 'Update Field', desc: "Copy a field's value", actions: ['update'] }
     ];
 
@@ -751,7 +745,7 @@
         return (COND_ACTION_GROUPS.find(g => g.actions.includes(actionId)) || COND_ACTION_GROUPS[0]).id;
     }
 
-       currentFormId = @ViewBag.FormId;
+    currentFormId = @ViewBag.FormId;
 
     logoWidth = null;
     logoHeight = 110;
@@ -889,8 +883,8 @@
         var prev = item.previousElementSibling;
         var next = item.nextElementSibling;
         var hint = (prev && prev.classList.contains('zfb-page-dropzone-hint')) ? prev
-                 : (next && next.classList.contains('zfb-page-dropzone-hint')) ? next
-                 : null;
+            : (next && next.classList.contains('zfb-page-dropzone-hint')) ? next
+                : null;
 
         // The view-only page footers (.zfb-injected) are extra nodes in the canvas;
         // take them out of the count so the index means what it always did.
@@ -931,17 +925,17 @@
 
     function requiredHideTogglesHtml(field) {
         return `
-            <div class="d-flex gap-4">
-                <div class="form-check form-switch fb-toggle-switch">
-                    <input type="checkbox" class="form-check-input" role="switch" id="reqChk_${field.id}" ${field.required ? 'checked' : ''} onchange="updateField('${field.id}','required',this.checked)">
-                    <label class="form-check-label" for="reqChk_${field.id}">Required</label>
+                <div class="d-flex gap-4">
+                    <div class="form-check form-switch fb-toggle-switch">
+                        <input type="checkbox" class="form-check-input" role="switch" id="reqChk_${field.id}" ${field.required ? 'checked' : ''} onchange="updateField('${field.id}','required',this.checked)">
+                        <label class="form-check-label" for="reqChk_${field.id}">Required</label>
+                    </div>
+                    <div class="form-check form-switch fb-toggle-switch">
+                        <input type="checkbox" class="form-check-input" role="switch" id="hideChk_${field.id}" ${field.hidden ? 'checked' : ''} onchange="updateField('${field.id}','hidden',this.checked); renderCanvas();">
+                        <label class="form-check-label" for="hideChk_${field.id}">Hide</label>
+                    </div>
                 </div>
-                <div class="form-check form-switch fb-toggle-switch">
-                    <input type="checkbox" class="form-check-input" role="switch" id="hideChk_${field.id}" ${field.hidden ? 'checked' : ''} onchange="updateField('${field.id}','hidden',this.checked); renderCanvas();">
-                    <label class="form-check-label" for="hideChk_${field.id}">Hide</label>
-                </div>
-            </div>
-        `;
+            `;
     }
 
 
@@ -954,8 +948,15 @@
         return formFields.filter(f => !COND_TRIGGER_EXCLUDED_TYPES.includes(f.type));
     }
 
-    function condTargetableFields(excludeId) {
-        return formFields.filter(f => !COND_TARGET_EXCLUDED_TYPES.includes(f.type) && f.id !== excludeId);
+    function condSourceFields() {
+        return formFields.filter(f => !['heading', 'paragraph', 'payment', 'captcha', 'signature', 'fullname'].includes(f.type));
+    }
+
+    function condTargetableFields(excludeId, forUpdate, sourceType) {
+        return formFields.filter(f => !COND_TARGET_EXCLUDED_TYPES.includes(f.type)
+            && !(forUpdate && sourceType === 'address' && f.type !== 'address')
+            && !(forUpdate && sourceType !== 'address' && f.type === 'address')
+            && f.id !== excludeId);
     }
 
     function condOperatorNeedsValue(operatorId) {
@@ -1048,6 +1049,9 @@
         if (key === 'triggerFieldId') {
             condDraft.triggerValue = '';
         }
+        if (key === 'sourceFieldId') {
+            condDraft.targetFieldIds = [];
+        }
         renderConditionsModal();
     }
 
@@ -1074,7 +1078,7 @@
             return;
         }
         if (condOperatorNeedsValue(condDraft.operator) && !condDraft.triggerValue) {
-            alert('Enter a value to compare against, or choose an operator that doesn\'t need one (Is Checked / Is Empty / Is Not Empty).');
+            alert('Enter a value to compare against.');
             return;
         }
         if (condEditingId) {
@@ -1096,24 +1100,24 @@
         if (condModalView === 'category') {
             title.textContent = 'Manage Conditional Logic';
             body.innerHTML = `
-                <div class="fb-cond-category">
-                    <div class="fb-cond-category-grid">
-                        ${COND_ACTION_GROUPS.map(g => `
-                            <div class="fb-cond-category-card ${condDraft.category === g.id ? 'active' : ''}" onclick="selectConditionCategory('${g.id}')">
-                                <input type="radio" name="condCategory" ${condDraft.category === g.id ? 'checked' : ''} onclick="event.stopPropagation(); selectConditionCategory('${g.id}')">
-                                <div>
-                                    <div class="fb-cond-category-title">${g.label}</div>
-                                    <div class="fb-cond-category-desc text-muted small">${g.desc}</div>
+                    <div class="fb-cond-category">
+                        <div class="fb-cond-category-grid">
+                            ${COND_ACTION_GROUPS.map(g => `
+                                <div class="fb-cond-category-card ${condDraft.category === g.id ? 'active' : ''}" onclick="selectConditionCategory('${g.id}')">
+                                    <input type="radio" name="condCategory" ${condDraft.category === g.id ? 'checked' : ''} onclick="event.stopPropagation(); selectConditionCategory('${g.id}')">
+                                    <div>
+                                        <div class="fb-cond-category-title">${g.label}</div>
+                                        <div class="fb-cond-category-desc text-muted small">${g.desc}</div>
+                                    </div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            `).join('')}
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-outline-secondary" onclick="cancelConditionEditor()">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="proceedToConditionEditor()">Continue</button>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <button type="button" class="btn btn-outline-secondary" onclick="cancelConditionEditor()">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="proceedToConditionEditor()">Continue</button>
-                    </div>
-                </div>
-            `;
+                `;
             return;
         }
 
@@ -1128,69 +1132,70 @@
             const groupActions = COND_ACTIONS.filter(a => group.actions.includes(a.id));
             const isUpdate = category === 'update';
 
+            const sourceField = formFields.find(f => f.id === condDraft.sourceFieldId);
             const targetable = isUpdate
-                ? condTargetableFields(condDraft.sourceFieldId)
+                ? condTargetableFields(condDraft.sourceFieldId, true, sourceField ? sourceField.type : '')
                 : condTargetableFields(condDraft.triggerFieldId);
 
             body.innerHTML = `
-                <div class="fb-cond-editor">
-                    <a href="javascript:void(0)" class="fb-cond-back-link" onclick="backToConditionCategory()">← Select Condition Action Type</a>
+                    <div class="fb-cond-editor">
+                        <a href="javascript:void(0)" class="fb-cond-back-link" onclick="backToConditionCategory()">← Select Condition Action Type</a>
 
-                    <label class="form-label mt-2">If</label>
-                    <select class="form-select mb-2" onchange="updateConditionDraft('triggerFieldId', this.value)">
-                        ${triggerable.map(f => `<option value="${f.id}" ${f.id === condDraft.triggerFieldId ? 'selected' : ''}>${f.label} (${f.type})</option>`).join('')}
-                    </select>
+                        <label class="form-label mt-2">If</label>
+                        <select class="form-select mb-2" onchange="updateConditionDraft('triggerFieldId', this.value)">
+                            ${triggerable.map(f => `<option value="${f.id}" ${f.id === condDraft.triggerFieldId ? 'selected' : ''}>${f.label} (${f.type})</option>`).join('')}
+                        </select>
 
-                    <label class="form-label">Condition</label>
-                    <select class="form-select mb-2" onchange="updateConditionDraft('operator', this.value)">
-                        ${COND_OPERATORS.map(o => `<option value="${o.id}" ${o.id === condDraft.operator ? 'selected' : ''}>${o.label}</option>`).join('')}
-                    </select>
+                        <label class="form-label">Condition</label>
+                        <select class="form-select mb-2" onchange="updateConditionDraft('operator', this.value)">
+                            ${COND_OPERATORS.map(o => `<option value="${o.id}" ${o.id === condDraft.operator ? 'selected' : ''}>${o.label}</option>`).join('')}
+                        </select>
 
-                    ${needsValue ? `
-                        <label class="form-label">Value</label>
-                        ${hasOptions ? `
-                            <select class="form-select mb-2" onchange="updateConditionDraft('triggerValue', this.value)">
-                                <option value="">-- Select a value --</option>
-                                ${triggerField.options.map(o => `<option value="${o}" ${o === condDraft.triggerValue ? 'selected' : ''}>${o}</option>`).join('')}
+                        ${needsValue ? `
+                            <label class="form-label">Value</label>
+                            ${hasOptions ? `
+                                <select class="form-select mb-2" onchange="updateConditionDraft('triggerValue', this.value)">
+                                    <option value="">-- Select a value --</option>
+                                    ${triggerField.options.map(o => `<option value="${o}" ${o === condDraft.triggerValue ? 'selected' : ''}>${o}</option>`).join('')}
+                                </select>
+                            ` : `
+                                <input type="text" class="form-control mb-2" value="${condDraft.triggerValue || ''}" onchange="updateConditionDraft('triggerValue', this.value)" placeholder="Value to compare against" />
+                            `}
+                        ` : ''}
+
+                        ${isUpdate ? `
+                            <label class="form-label">Then copy value from</label>
+                            <select class="form-select mb-2" onchange="updateConditionDraft('sourceFieldId', this.value)">
+                                <option value="">-- Select a field --</option>
+                                ${condSourceFields().map(f => `<option value="${f.id}" ${f.id === condDraft.sourceFieldId ? 'selected' : ''}>${f.label} (${f.type})</option>`).join('')}
                             </select>
+
+                            <label class="form-label">Into field(s)</label>
                         ` : `
-                            <input type="text" class="form-control mb-2" value="${condDraft.triggerValue || ''}" onchange="updateConditionDraft('triggerValue', this.value)" placeholder="Value to compare against" />
+                            <label class="form-label">Then</label>
+                            <select class="form-select mb-2" onchange="updateConditionDraft('action', this.value)">
+                                ${groupActions.map(a => `<option value="${a.id}" ${a.id === condDraft.action ? 'selected' : ''}>${a.label}</option>`).join('')}
+                            </select>
+
+                            <label class="form-label">On field(s)</label>
                         `}
-                    ` : ''}
+                        <div class="fb-cond-target-list">
+                            ${targetable.length ? targetable.map(f => `
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="condTarget_${f.id}"
+                                           ${condDraft.targetFieldIds && condDraft.targetFieldIds.includes(f.id) ? 'checked' : ''}
+                                           onchange="toggleConditionTarget('${f.id}', this.checked)">
+                                    <label class="form-check-label" for="condTarget_${f.id}">${f.label} (${f.type})</label>
+                                </div>
+                            `).join('') : '<p class="text-muted small">No other fields available to target.</p>'}
+                        </div>
 
-                    ${isUpdate ? `
-                        <label class="form-label">Then copy value from</label>
-                        <select class="form-select mb-2" onchange="updateConditionDraft('sourceFieldId', this.value)">
-                            <option value="">-- Select a field --</option>
-                            ${triggerable.map(f => `<option value="${f.id}" ${f.id === condDraft.sourceFieldId ? 'selected' : ''}>${f.label} (${f.type})</option>`).join('')}
-                        </select>
-
-                        <label class="form-label">Into field(s)</label>
-                    ` : `
-                        <label class="form-label">Then</label>
-                        <select class="form-select mb-2" onchange="updateConditionDraft('action', this.value)">
-                            ${groupActions.map(a => `<option value="${a.id}" ${a.id === condDraft.action ? 'selected' : ''}>${a.label}</option>`).join('')}
-                        </select>
-
-                        <label class="form-label">On field(s)</label>
-                    `}
-                    <div class="fb-cond-target-list">
-                        ${targetable.length ? targetable.map(f => `
-                            <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="condTarget_${f.id}"
-                                       ${condDraft.targetFieldIds && condDraft.targetFieldIds.includes(f.id) ? 'checked' : ''}
-                                       onchange="toggleConditionTarget('${f.id}', this.checked)">
-                                <label class="form-check-label" for="condTarget_${f.id}">${f.label} (${f.type})</label>
-                            </div>
-                        `).join('') : '<p class="text-muted small">No other fields available to target.</p>'}
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-outline-secondary" onclick="cancelConditionEditor()">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveConditionDraft()">Save Condition</button>
+                        </div>
                     </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <button type="button" class="btn btn-outline-secondary" onclick="cancelConditionEditor()">Cancel</button>
-                        <button type="button" class="btn btn-primary" onclick="saveConditionDraft()">Save Condition</button>
-                    </div>
-                </div>
-            `;
+                `;
             return;
         }
 
@@ -1203,22 +1208,22 @@
             : `${actionLabel(rule.action)}: ${(rule.targetFieldIds || []).map(condFieldLabel).join(', ')}`;
 
         body.innerHTML = `
-            <div class="fb-cond-list">
-                ${formConditions.length ? formConditions.map(rule => `
-                    <div class="fb-cond-row">
-                        <div>
-                            <div><strong>If</strong> ${condFieldLabel(rule.triggerFieldId)} <strong>${opLabel(rule.operator).toLowerCase()}</strong>${condOperatorNeedsValue(rule.operator) ? ` "${rule.triggerValue}"` : ''}</div>
-                            <div class="text-muted small"><strong>Then</strong> ${thenLabel(rule)}</div>
+                <div class="fb-cond-list">
+                    ${formConditions.length ? formConditions.map(rule => `
+                        <div class="fb-cond-row">
+                            <div>
+                                <div><strong>If</strong> ${condFieldLabel(rule.triggerFieldId)} <strong>${opLabel(rule.operator).toLowerCase()}</strong>${condOperatorNeedsValue(rule.operator) ? ` "${rule.triggerValue}"` : ''}</div>
+                                <div class="text-muted small"><strong>Then</strong> ${thenLabel(rule)}</div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editCondition('${rule.id}')">Edit</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCondition('${rule.id}')">Delete</button>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editCondition('${rule.id}')">Edit</button>
-                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCondition('${rule.id}')">Delete</button>
-                        </div>
-                    </div>
-                `).join('') : '<p class="text-muted small">No conditions yet. Conditions let you show/hide, require, mask, or copy values between fields based on what the visitor fills in elsewhere on the form.</p>'}
-            </div>
-            <button type="button" class="btn btn-primary w-100 mt-3" onclick="addNewCondition()">+ Add New Condition</button>
-        `;
+                    `).join('') : '<p class="text-muted small">No conditions yet. Conditions let you show/hide, require, mask, or copy values between fields based on what the visitor fills in elsewhere on the form.</p>'}
+                </div>
+                <button type="button" class="btn btn-primary w-100 mt-3" onclick="addNewCondition()">+ Add New Condition</button>
+            `;
     }
 
 

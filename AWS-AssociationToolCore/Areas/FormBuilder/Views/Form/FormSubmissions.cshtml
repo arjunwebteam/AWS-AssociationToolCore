@@ -13,7 +13,7 @@
     var FormId = (Int64)ViewBag.FormId;
     var FormPublicId = AWSFormBuilder.Areas.FormBuilder.BLL.FormLinkObfuscator.EncryptFormId(FormId);
     var FormTitle = (string)ViewBag.FormTitle;
-    bool hasPayment = ViewBag.HasPayment == true;   
+    bool hasPayment = ViewBag.HasPayment == true;   // ✅ ADDED - form లో payment field ఉందా
     var lstSubmissions = ViewBag.lstSubmissions as List<AWSFormBuilder.Entities.FormSubmissionModel>;
     var summaryFields = ViewBag.SummaryFields as List<dynamic>;
     var allFormFields = ViewBag.AllFormFields as List<dynamic>;

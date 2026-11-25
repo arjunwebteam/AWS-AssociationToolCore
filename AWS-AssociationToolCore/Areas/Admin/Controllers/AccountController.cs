@@ -25,7 +25,7 @@ using Rectangle = System.Drawing.Rectangle;
 using PointF = System.Drawing.PointF;
 namespace AWS_AssociationToolCore.Areas.Admin.Controllers
 {
-    //mahi wed
+    //mahi wed 25/11/2026
     [Area("Admin")]
     public class AccountController : Controller
     {
@@ -135,7 +135,166 @@ namespace AWS_AssociationToolCore.Areas.Admin.Controllers
 
             return View();
         }
+        #region Impersonation
 
+        [HttpPost]
+        public async Task<IActionResult> ImpersonateUser(string email)
+        {
+            try
+            {
+                var current = HttpContext.User;
+
+                if (current?.Identity == null || !current.Identity.IsAuthenticated)
+                    return RedirectToAction("LogOn", "Account", new { area = "Admin" });
+
+                string currentRole = current.FindFirst(ClaimTypes.Role)?.Value ?? "";
+
+                // Only SuperAdmin / DeveloperAdmin can impersonate
+                if (!(currentRole.Contains("SuperAdmin") || currentRole.Contains("DeveloperAdmin")))
+                    return RedirectToAction("Unauthorized", "Account", new { area = "Admin" });
+
+                // Already impersonating -> don't allow nested impersonation
+                if (current.FindFirst("IsImpersonating")?.Value == "true")
+                {
+                    TempData["messageType"] = "warning";
+                    TempData["message"] = "Please return to your admin account before impersonating another user.";
+                    return RedirectToAction("Index", "Users", new { area = "Admin" });
+                }
+
+                int _status = 0;
+                var target = _user.GetAdminUsersGetByEmail(email, ref _status);
+
+                if (target == null || target.UserId == 0 || target.RoleName == "EndUser")
+                {
+                    TempData["messageType"] = "warning";
+                    TempData["message"] = "User not found.";
+                    return RedirectToAction("Index", "Users", new { area = "Admin" });
+                }
+
+                if (!target.IsApproved)
+                {
+                    TempData["messageType"] = "warning";
+                    TempData["message"] = "User is deactivated.";
+                    return RedirectToAction("Index", "Users", new { area = "Admin" });
+                }
+
+                // Don't allow impersonating another SuperAdmin / DeveloperAdmin
+                if (target.RoleName.Contains("SuperAdmin") || target.RoleName.Contains("DeveloperAdmin"))
+                {
+                    TempData["messageType"] = "warning";
+                    TempData["message"] = "You cannot impersonate an admin account.";
+                    return RedirectToAction("Index", "Users", new { area = "Admin" });
+                }
+
+                // Chapter name (same as AdminAuth)
+                string cname = "";
+                if (target.ChapterId != 0)
+                {
+                    int qstatus = 0;
+                    var chap = _Chapters.GetChaptersById(target.ChapterId, ref qstatus);
+                    cname = chap?.ChapterName ?? "";
+                }
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name,  target.UserName),
+                    new Claim(ClaimTypes.Email, target.Email),
+                    new Claim(ClaimTypes.Role,  target.RoleName),
+                    new Claim("UserId",         target.UserId.ToString()),
+                    new Claim("ChapterId",      target.ChapterId.ToString()),
+                    new Claim("ChapterName",    cname),
+
+                    // ✅ Impersonation info (original admin)
+                    new Claim("IsImpersonating",   "true"),
+                    new Claim("ImpersonatorEmail", current.FindFirst(ClaimTypes.Email)?.Value ?? ""),
+                    new Claim("ImpersonatorName",  current.FindFirst(ClaimTypes.Name)?.Value ?? "")
+                };
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(identity),
+                    new AuthenticationProperties { IsPersistent = false, ExpiresUtc = DateTime.UtcNow.AddMinutes(20) });
+
+                HttpContext.Session.Clear();
+                HttpContext.Session.SetString("ChapterName", cname);
+
+                if (target.RoleName.Contains("SubAdmin"))
+                    return RedirectToAction("Welcom", "Home",
+                        new { mid = 4  });
+
+                return RedirectToAction("Welcom", "Home",
+                    new { mid = 4 });
+            }
+            catch
+            {
+                TempData["messageType"] = "warning";
+                TempData["message"] = "Failed transaction.";
+                return RedirectToAction("Index", "Users", new { area = "Admin" });
+            }
+        }
+
+        public async Task<IActionResult> StopImpersonation()
+        {
+            try
+            {
+                var current = HttpContext.User;
+
+                if (current?.FindFirst("IsImpersonating")?.Value != "true")
+                    return RedirectToAction("Index", "Users", new { area = "Admin" });
+
+                string adminEmail = current.FindFirst("ImpersonatorEmail")?.Value;
+
+                int _status = 0;
+                var admin = _user.GetAdminUsersGetByEmail(adminEmail, ref _status);
+
+                // Safety: original must still be a valid, approved SuperAdmin / DeveloperAdmin
+                if (admin == null || admin.UserId == 0 || !admin.IsApproved ||
+                    !(admin.RoleName.Contains("SuperAdmin") || admin.RoleName.Contains("DeveloperAdmin")))
+                {
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    HttpContext.Session.Clear();
+                    return RedirectToAction("LogOn", "Account", new { area = "Admin" });
+                }
+
+                string cname = "";
+                if (admin.ChapterId != 0)
+                {
+                    int qstatus = 0;
+                    var chap = _Chapters.GetChaptersById(admin.ChapterId, ref qstatus);
+                    cname = chap?.ChapterName ?? "";
+                }
+
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name,  admin.UserName),
+                    new Claim(ClaimTypes.Email, admin.Email),
+                    new Claim(ClaimTypes.Role,  admin.RoleName),
+                    new Claim("UserId",         admin.UserId.ToString()),
+                    new Claim("ChapterId",      admin.ChapterId.ToString()),
+                    new Claim("ChapterName",    cname)
+                };
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                await HttpContext.SignInAsync(
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(identity),
+                    new AuthenticationProperties { IsPersistent = false, ExpiresUtc = DateTime.UtcNow.AddMinutes(20) });
+
+                HttpContext.Session.Clear();
+                HttpContext.Session.SetString("ChapterName", cname);
+
+                return RedirectToAction("Index", "Users", new { area = "Admin" });
+            }
+            catch
+            {
+                return RedirectToAction("LogOn", "Account", new { area = "Admin" });
+            }
+        }
+
+        #endregion
         public async Task<IActionResult> LogOff()
         {
             // ✅ Sign out user (removes auth cookie)

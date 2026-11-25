@@ -1,5 +1,5 @@
 /* ===========================================================
-   AWS_AssociationToolCore Form Builder - Designer Engine
+   Temple360 Form Builder - Designer Engine
    Native HTML5 drag & drop. No external drag-drop library needed.
    =========================================================== */
 (function () {

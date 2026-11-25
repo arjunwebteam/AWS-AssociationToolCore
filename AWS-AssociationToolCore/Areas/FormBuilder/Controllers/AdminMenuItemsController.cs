@@ -47,7 +47,6 @@ namespace AWSFormBuilder.Areas.FormBuilder.Controllers
                 status = -1;
             }
 
-            // ✅ Get UserId from Claims — replaces Request.Cookies["UserId"]
             Int64 UserId = Convert.ToInt64(
                 User.FindFirst("UserId")?.Value ?? "0");
             // ✅ Get UserRole from Claims (replaces HttpCookie)

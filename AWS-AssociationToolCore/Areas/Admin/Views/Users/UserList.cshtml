@@ -1,8 +1,13 @@
-﻿@{ Layout = null;}
+﻿@{
+    Layout = null;
+}
 @{
     string sortcolumn = (string)ViewBag.sortcolumn;
     string sortorder = (string)ViewBag.sortorder;
     Int64 total = (Int64)ViewBag.total;
+
+    string currentUserRole = Context.Session.GetString("userrole") ?? "";
+    bool canImpersonate = currentUserRole.Contains("SuperAdmin") || currentUserRole.Contains("DeveloperAdmin");
 
 
     var PageNo = (Int64)ViewBag.pageno;
@@ -14,8 +19,8 @@
 
             @if (total == -1)
             {
-               
-                    <tr class="odd"><td valign="top" colspan="10" class="font-14 text-center">No Records found</td></tr>
+
+                <tr class="odd"><td valign="top" colspan="10" class="font-14 text-center">No Records found</td></tr>
             }
             else
             {
@@ -32,7 +37,7 @@
                             <th>#</th>
                             <th>Password</th>
                             <th>Status</th>
-                            <th class="text-center" width="80">Action</th>
+                            <th class="text-center" width="110">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -50,79 +55,80 @@
                                     <td>@item.RoleName</td>
                                     <td>@(item.MobilePhone != null && item.MobilePhone != "" ? item.MobilePhone : "N/A")</td>
 
-                                    @if (!item.RoleName.Contains("SuperAdmin"))
-                                    {
-                                        <td><a href="@Url.Action("AssignMenu","AdminMenuItems", new { RoleId = item.RoleId,UserId=item.UserId,UserName=item.UserName,RoleName=item.RoleName })">Access</a></td>
+                                  
+                                        <td><a href="@Url.Action("AssignMenu", "AdminMenuItems", new { RoleId = item.RoleId, UserId = item.UserId, UserName = item.UserName, RoleName = item.RoleName })">Access</a></td>
 
 
-                                    }
-                                    else
-                                    {
-                                        <td>&nbsp;</td>
-                                    }
+                                   
+                                  
                                     <td>
                                         <a id="pwdlnk-@item.UserId"
                                            onclick="GetPassword(@item.UserId, '@item.Password');"
                                            style="color:#00aeef; cursor:pointer;">Get Password</a>
                                         <span id="pwdtxt-@item.UserId" style="display:none;"></span>
                                     </td>
-                       
+
                                     <td>
                                         @if (!item.RoleName.Contains("SuperAdmin"))
                                         {
+                                            var onClass = item.IsApproved ? "is-on" : "";
+                                            var titleValue = item.IsApproved ? "Active" : "Disabled";
 
-                                            <div class="menu-hover">
-                                                @{ var isChecked = item.IsApproved ? "checked" : "";
-                                                }
-                                                <div>
-                                                    <label class="switch">
-                                                        <input type="checkbox" onclick="UserStatus(@item.UserId)" @isChecked>
-                                                        <span class="slider"></span>
-                                                    </label>
-                                                </div>
-                                            </div>
+                                            <button type="button"
+                                                    class="status-toggle @onClass"
+                                                    role="switch"
+                                                    aria-checked="@(item.IsApproved ? "true" : "false")"
+                                                    title="@titleValue"
+                                                    onclick="UserStatus(@item.UserId)">
+                                                <span class="status-toggle__knob"></span>
+                                            </button>
                                         }
                                         else
                                         {
-                                            <p>Active</p>
+                                            // SuperAdmin is always Active and cannot be changed
+                                            <button type="button"
+                                                    class="status-toggle is-on"
+                                                    role="switch"
+                                                    aria-checked="true"
+                                                    disabled
+                                                    title="SuperAdmin status cannot be disabled. It is always Active">
+                                                <span class="status-toggle__knob"></span>
+                                            </button>
                                         }
                                     </td>
-
-
 
                                     <td class="text-center">
                                         <div class="table-actions d-flex align-items-center gap-3 fs-6">
 
-
+                                            <a class="text-warning cursor-pointer" onclick="UserEdit(@item.UserId);" title="Edit" aria-label="Edit"><i class="bi bi-pencil-fill"></i></a>
 
                                             @if (item.RoleName != "SuperAdmin")
                                             {
-
-                                                <a class="text-warning cursor-pointer" onclick="UserEdit(@item.UserId);;" title=" Edit" aria-label="Edit"><i class="bi bi-pencil-fill"></i></a>
-
                                                 <a class="text-danger cursor-pointer" onclick="javascript:UserDelete(@item.UserId, '@item.UserName');" title="Delete" aria-label="Delete"><i class="bi bi-trash-fill"></i></a>
-
                                             }
-
                                             else
                                             {
-                                                <a title="Edit" class="text-warning cursor-pointer" onclick="UserEdit(@item.UserId);"><i class="bi bi-pencil-fill"></i></a>
-
+                                                <span class="text-muted" style="opacity:.4; cursor:not-allowed;" title="SuperAdmin cannot be deleted" aria-label="SuperAdmin cannot be deleted">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </span>
                                             }
 
-
+                                            @if (canImpersonate && !item.RoleName.Contains("SuperAdmin") && item.IsApproved)
+                                            {
+                                                <a class="text-primary cursor-pointer"
+                                                   onclick="ImpersonateUser('@item.Email', '@item.UserName');"
+                                                   title="Login As this user" aria-label="Login As">
+                                                    <i class="bi bi-box-arrow-in-right"></i>
+                                                </a>
+                                            }
 
                                         </div>
-
-
                                     </td>
-
-
 
                                 </tr>
                             }
                         }
-                        
+
 
                     </tbody>
                 </table>
@@ -164,56 +170,101 @@
 }
 
 
+<style>
+    .status-toggle {
+        position: relative;
+        width: 42px;
+        height: 22px;
+        padding: 0;
+        border: 0;
+        border-radius: 22px;
+        background: #cbd5e1;
+        cursor: pointer;
+        transition: background .2s ease;
+        vertical-align: middle;
+    }
+
+        .status-toggle.is-on {
+            background: #16c60c;
+        }
+
+    .status-toggle__knob {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,.3);
+        transition: transform .2s ease;
+    }
+
+    .status-toggle.is-on .status-toggle__knob {
+        transform: translateX(20px);
+    }
+
+    .status-toggle:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+    }
+
+    .status-toggle:focus-visible {
+        outline: 2px solid #3461ff;
+        outline-offset: 2px;
+    }
+</style>
+
 <script type="text/javascript">
-            function UserStatus(UserId) {
-                $.ajax({
-                            type: "POST",
-                    url: '@Url.Action("UserStatus", "Users")', // the URL of the controller action method
-                    data: { UserId: UserId }, // optional data
-                    datatype: "JSON",
-                    success: function (result) {
-                        showLobiboxNotification(result.messageType, result.message);
-                                    if (result.ok) {
-                            //$('#divmessage').html(result.data);
-                            //$('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                            //$('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                                        UserBind(1, 'on');
-                                    }
-                                    else {
-                            $('#divmessage').html(result.data);
-                            $('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                            $('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                                    }
-                                }
-                            });
-                        }
+    function UserStatus(UserId) {
+        $.ajax({
+            type: "POST",
+            url: '@Url.Action("UserStatus", "Users")', // the URL of the controller action method
+            data: { UserId: UserId }, // optional data
+            datatype: "JSON",
+            success: function (result) {
+                showLobiboxNotification(result.messageType, result.message);
+                if (result.ok) {
+                    //$('#divmessage').html(result.data);
+                    //$('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                    //$('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                    UserBind(1, 'on');
+                }
+                else {
+                    $('#divmessage').html(result.data);
+                    $('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                    $('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                }
+            }
+        });
+    }
 
-                        function UserDelete(UserId, UserName) {
+    function UserDelete(UserId, UserName) {
 
-                            var conf = confirm('Do you want to delete user ' + UserName + '?');
+        var conf = confirm('Do you want to delete user ' + UserName + '?');
 
-                            if (conf) {
-                    $.ajax({
-                                type: "POST",
-                        url: '@Url.Action("UserDelete", "Users")', // the URL of the controller action method
-                        data: { UserId: UserId }, // optional data
-                        datatype: "JSON",
-                        success: function (result) {
-                            showLobiboxNotification(result.messageType, result.message);
-                                        if (result.ok) {
-                                //$('#divmessage').html(result.data);
-                                //$('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                                //$('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                                            UserBind(1, 'on');
-                                        }
-                                        else {
-                                $('#divmessage').html(result.data);
-                                $('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                                $('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
-                                        }
-                                    }
-                                });
-                            }
+        if (conf) {
+            $.ajax({
+                type: "POST",
+                url: '@Url.Action("UserDelete", "Users")', // the URL of the controller action method
+                data: { UserId: UserId }, // optional data
+                datatype: "JSON",
+                success: function (result) {
+                    showLobiboxNotification(result.messageType, result.message);
+                    if (result.ok) {
+                        //$('#divmessage').html(result.data);
+                        //$('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                        //$('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                        UserBind(1, 'on');
+                    }
+                    else {
+                        $('#divmessage').html(result.data);
+                        $('.alert-danger').append('<i class="fa fa-ban"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                        $('.alert-success').append('<i class="fa fa-check"></i><button class="close" aria-hidden="true" data-dismiss="alert" type="button">×</button>');
+                    }
+                }
+            });
+        }
     }
 
     // function GetPassword(id, pwd) {
@@ -230,8 +281,25 @@
     //             $('#pwdtxt-' + id).html(result.tata);
     //         }
     //     });
-   // }
-         function GetPassword(id, pwd) {
+    // }
+    function ImpersonateUser(email, userName) {
+        if (!confirm('Login as ' + userName + '? You can return to your admin account anytime.')) return;
+
+        var f = document.createElement('form');
+        f.method = 'POST';
+        f.action = '@Url.Action("ImpersonateUser", "Account", new { area = "Admin" })';
+
+        var i = document.createElement('input');
+        i.type = 'hidden';
+        i.name = 'email';
+        i.value = email;
+        f.appendChild(i);
+
+        document.body.appendChild(f);
+        f.submit();
+    }
+
+    function GetPassword(id, pwd) {
         $.ajax({
             type: "POST",
             cache: false,

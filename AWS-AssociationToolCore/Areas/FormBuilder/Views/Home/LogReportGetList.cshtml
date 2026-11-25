@@ -82,7 +82,7 @@
                         <td style="text-align: left;"><a class="cursor-pointer aws-h-a " href="@Url.Action("SubLogReport", "Home", new { LogId = item.LogId })">@(item.LogTitle == "" ? "N/A" : item.LogTitle)</a></td>
 
                 <td style="text-align: left" class="t-t-c"> @(item.LogDescription == "" ? "N/A" : item.LogDescription)</td>
-                        <td style="text-align: left;"> <a class="cursor-pointer aws-h-a " href="@Url.Action("SubLogReport", "Home", new { LogId = item.LogId })">@(item.InsertedBy == "" ? "N/A" : item.InsertedBy)</a></td>
+                        <td style="text-align: left"><a class="cursor-pointer aws-h-a " href="@Url.Action("SubLogReport", "Home", new { LogId = item.LogId })">@(item.InsertedBy == "" ? "N/A" : item.InsertedBy)</a></td>
                               <td style="text-align: left" class="t-t-c">@item.UpdatedBy</td>
 
 

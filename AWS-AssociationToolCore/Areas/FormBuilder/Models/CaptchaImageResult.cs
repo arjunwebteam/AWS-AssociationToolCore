@@ -3,10 +3,6 @@ using Microsoft.AspNetCore.Http;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using Color = System.Drawing.Color;
-using Rectangle = System.Drawing.Rectangle;
-using Point = System.Drawing.Point;
-using PointF = System.Drawing.PointF;
 
 namespace AWSFormBuilder.Areas.FormBuilder.Controllers  // ✅ Fixed: Controllers not Models
 {

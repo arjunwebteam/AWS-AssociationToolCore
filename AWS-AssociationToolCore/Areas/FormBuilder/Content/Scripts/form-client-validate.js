@@ -1,5 +1,5 @@
 /* ===========================================================
-   AWS_AssociationToolCore Form Builder - Client-side validation
+   Temple360 Form Builder - Client-side validation
    Reads data-required / data-regex / data-minlength / data-maxlength
    attributes that Render.cshtml stamps onto each field based on the
    "Required" toggle and validation settings set in the designer.
@@ -148,7 +148,7 @@
     }
 
     function postHeight() {
-        window.parent.postMessage({ AWS_AssociationToolCoreFormHeight: document.body.scrollHeight }, '*');
+        window.parent.postMessage({ temple360FormHeight: document.body.scrollHeight }, '*');
     }
 
     window.addEventListener('load', postHeight);

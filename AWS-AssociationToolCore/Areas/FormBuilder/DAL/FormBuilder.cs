@@ -341,7 +341,7 @@ namespace AWSFormBuilder.Areas.FormBuilder.DAL
         };
 
                 dt = _dbAccess.GetDataTable("FormSubmissionsExportToExcel", ref _sqlP);
-             }
+            }
             catch (Exception ex)
             {
                 throw ex;

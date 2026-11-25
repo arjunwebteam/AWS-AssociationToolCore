@@ -8,6 +8,8 @@
     objAppInfo = _AppInfo.GetAppInfoDetails(ref status);
     ViewBag.Title = "User Validate - " + objAppInfo.SiteName;
     Layout = null;
+    var Logon = objAppInfo.BaseUrl + "Areas/FormBuilder/Content/Loginlogo/normalimages/";
+
 }
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" class="bg-black">
@@ -132,7 +134,7 @@
         <div class="login-sec">
             <div class="login-form">
                 <div class="text-center">
-                    <a href="#"><img src="Content/Admin/images/logo1.png" alt="@objAppInfo.SiteName" title="@objAppInfo.SiteName" /></a>
+                    <a href="#"><img src="@Logon/@objAppInfo.Loginlogo" alt="@objAppInfo.SiteName" title="@objAppInfo.SiteName" /></a>
                 </div>
                 <div class="login-head text-center">@objAppInfo.SiteName</div>
 
@@ -148,7 +150,7 @@
 
 
                     <div>
-                        <button class="login-btn" type="submit" onclick="window.open('admin', '_blank');">Go to Login </button>
+                        <button class="login-btn" type="submit" onclick="window.open('_blank');">Go to Login </button>
                     </div>
                
             </div>

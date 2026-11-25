@@ -306,10 +306,7 @@
     <div class="zentic-main" id="zenticMain">
 
         <header class="zentic-topbar">
-            
-          @if (userRole.Contains("SuperAdmin") || userRole.Contains("DeveloperAdmin"))
-            {
-            <div class="topbar-left zfb-topbar-left">
+            <div class="topbar-left">
                 <img style="max-height:50px"
                      src="@Layout1/@objAppInfo.LayoutLogo"
                      alt="@objAppInfo.SiteName"
@@ -318,21 +315,7 @@
                 <a href="/Admin/Home/Dashboard?mid=4" class="zfb-back-admin">
                     <i class="fas fa-arrow-left"></i> Back to Admin
                 </a>
-                </div>
-            }
-            else
-            {
-                <div class="topbar-left zfb-topbar-left">
-                    <img style="max-height:50px"
-                         src="@Layout1/@objAppInfo.LayoutLogo"
-                         alt="@objAppInfo.SiteName"
-                         class="sidebar-logo sidebar-logo-full" />
-
-                    <a href="/Admin/Home/Welcom?mid=4" class="zfb-back-admin">
-                        <i class="fas fa-arrow-left"></i> Back to Admin
-                    </a>
-                </div>
-            }
+            </div>
 
             <div class="topbar-right">
 
@@ -611,8 +594,8 @@
 
 
                         <div class="udm-body">
-
-@*                             <a href="@Url.Action("Profile", "Account")"
+@* 
+                            <a href="@Url.Action("Profile", "Account")"
                                class="user-dropdown-item">
 
                                 <i class="icon-circle-user"></i>
@@ -627,7 +610,7 @@
                             {
                                 
                           
-                         @*    <a href="@Url.Action("Index", "Users")"
+                            @* <a href="@Url.Action("Index", "Users")"
                                class="user-dropdown-item">
 
                                 <i class="icon-users"></i>
@@ -662,8 +645,8 @@
                             }
                             <hr class="user-dropdown-divider">
 
-
-                            @* <a href="@Url.Action("LogOff", "Account")"
+@* 
+                            <a href="@Url.Action("LogOff", "Account")"
                                class="user-dropdown-item danger">
 
                                 <i class="icon-log-out"></i>
@@ -672,8 +655,8 @@
                                     Logout
                                 </span>
 
-                            </a>
- *@
+                            </a> *@
+
                         </div>
 
                     </div>
@@ -1190,13 +1173,7 @@
             font-weight: 600;
             border-radius: 8px;
         }
-
-
-
-
-
-
-
+        
                 /* Back to Admin button (logo pakkana) */
         .zfb-topbar-left {
             display: flex;
